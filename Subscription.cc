@@ -19,7 +19,7 @@ Topic* Subscription::getTopic(){
  * Delete all the remaining subscriptions
 */
 SubscriptionManager::~SubscriptionManager(){
-    for(int i = 0; i < subscriptions.size(), i++){
+    for(int i = 0; i < subscriptions.size(); i++){
         delete subscriptions.at(i);
     }
 }
@@ -34,13 +34,13 @@ std::vector<Subscription*> SubscriptionManager::getSubByClient(int clientConFd){
 
     //loop through all subscriptions, keeping track of client matches
     Subscription* current = NULL;
-    for(int i = 0; i < subscriptions.size(), i++){
+    for(int i = 0; i < subscriptions.size(); i++){
         current = subscriptions.at(i);
         if(current->getClient() == clientConFd){
             subs.push_back(current);
         }
     }
-    return subs
+    return subs;
 }
 
 /**
@@ -53,13 +53,13 @@ std::vector<Subscription*> SubscriptionManager::getSubByTopic(Topic* topic){
 
     //loop through all subscriptions, keeping track of topic matches
     Subscription* current = NULL;
-    for(int i = 0; i < subscriptions.size(), i++){
+    for(int i = 0; i < subscriptions.size(); i++){
         current = subscriptions.at(i);
         if(current->getTopic() == topic){
             subs.push_back(current);
         }
     }
-    return subs
+    return subs;
 }
 
 /**
@@ -72,7 +72,7 @@ void SubscriptionManager::addSubscription(int clientConFd, Topic* topic){
     
     //loop through all the clients subscriptions, if a subscription to the topic is found exit
     Subscription* current = NULL;
-    for(int i = 0; i < clientSubs.size(), i++){
+    for(int i = 0; i < clientSubs.size(); i++){
         current = clientSubs.at(i);
         if(current->getTopic() == topic){
            return;
@@ -93,10 +93,10 @@ void SubscriptionManager::removeSubscription(int clientConFd, Topic* topic){
 
     //loop through all the clients subscriptions, if the subscription to the topic is found delete it
     Subscription* current = NULL;
-    for(int i = 0; i < clientSubs.size(), i++){
+    for(int i = 0; i < clientSubs.size(); i++){
         current = clientSubs.at(i);
         if(current->getTopic() == topic){
-            delete subscription;
+            delete current;
         }
     }
 }

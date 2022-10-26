@@ -8,14 +8,14 @@
  */
 Topic::Topic(std::string topicName){
     name = topicName;
-    retainMsg = NULL;
+    retainMsg = "";
 }
 
 /**
  * Delete all the subtopics to this topic
 */
 Topic::~Topic(){ 
-    for(int i = 0; i < subTopics.size(), i++){
+    for(int i = 0; i < subTopics.size(); i++){
         delete subTopics.at(i);
     }
 }
@@ -25,7 +25,7 @@ Topic::~Topic(){
  * @return std::string 
  */
 std::string Topic::getName(){
-    return name
+    return name;
 }
 
 /**
@@ -33,7 +33,7 @@ std::string Topic::getName(){
  * @return std::string 
  */
 std::string Topic::getRetainMsg(){
-    return retainMsg
+    return retainMsg;
 }
 
 /**
@@ -60,13 +60,13 @@ void Topic::addSubTopic(Topic* topic){
  */
 Topic* Topic::getSubTopic(std::string name){
     Topic* current = NULL;
-    for(int i = 0; i < subTopics.size(), i++){
+    for(int i = 0; i < subTopics.size(); i++){
         current = subTopics.at(i);
         if(name.compare(current->getName()) == 0){
             return current;
         }
     }
-    return NULL
+    return NULL;
 }
 
 
@@ -83,7 +83,7 @@ TopicManager::TopicManager(){ //TODO: Remove Constructor for phase 2
  * Delete all the root topics in the manager
 */
 TopicManager::~TopicManager(){
-    for(int i = 0; i < rootTopics.size(), i++){
+    for(int i = 0; i < rootTopics.size(); i++){
         delete rootTopics.at(i);
     }
 }
@@ -100,7 +100,7 @@ Topic* TopicManager::getTopic(std::string topicPath){
     //TODO: Implement Sub Level Spliting
 
     Topic* current = NULL;
-    for(int i = 0; i < rootTopics.size(), i++){
+    for(int i = 0; i < rootTopics.size(); i++){
         current = rootTopics.at(i);
         if(topicPath.compare(current->getName()) == 0){
             return current;
@@ -117,11 +117,11 @@ Topic* TopicManager::getTopic(std::string topicPath){
  * @param topicPath the path to the new topic
  * @return A pointer to the new topic
  */
-Topic* createTopic(std::string topicPath){
+Topic* TopicManager::createTopic(std::string topicPath){
     //TODO: Implement Path Error Checking
     //TODO: Implement Sub Level Spliting
 
     Topic* newTopic = new Topic(topicPath);
     rootTopics.push_back(newTopic);
-    return newTopic
+    return newTopic;
 }

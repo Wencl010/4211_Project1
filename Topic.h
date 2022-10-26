@@ -37,6 +37,7 @@ class TopicManager{
         std::vector<Topic*> rootTopics;
     
     public:
+        TopicManager(); //TODO: Remove Constructor for phase 2
         ~TopicManager();
         Topic* getTopic(std::string topicPath);
         Topic* createTopic(std::string topicPath);
