@@ -27,8 +27,10 @@ class SubscriptionManager{
         std::vector<Subscription*> subscriptions;
 
     public:
-        std::vector<std::string> getSubByClient(int clientConFd);
-        std::vector<int> getSubByTopic(Topic*);
+        ~SubscriptionManager() //Deallocate remaining Subscriptions
+        
+        std::vector<Subscription*> getSubByClient(int clientConFd);
+        std::vector<Subscription*> getSubByTopic(Topic* topic);
 
         void addSubscription(int clientConFd, Topic* topic);
         void removeSubscription(int clientConFd, Topic* topic);
