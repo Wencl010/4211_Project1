@@ -80,7 +80,7 @@ TopicManager::TopicManager(){ //TODO: Remove Constructor for phase 2
 }
 
 /**
- * Delete all the root topics in the program
+ * Delete all the root topics in the manager
 */
 TopicManager::~TopicManager(){
     for(int i = 0; i < rootTopics.size(), i++){
