@@ -12,7 +12,7 @@
 class Topic{
     private:
         std::string name;
-        std::string retainMsg;
+        std::string retainMsg; //the message that the server sends immediately upon subscription
         std::vector<Topic*> subTopics;
 
     public:
