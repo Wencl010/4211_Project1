@@ -12,8 +12,8 @@ Topic.o: Topic.cc Topic.h
 Subscription.o: Subscription.cc Subscription.h
 	$(CXX) $(CXXFLAGS) -c Subscription.cc -o buildFiles/server/Subscription.o
 
-client: build client.cc
-	$(CXX) $(CXXFLAGS) buildFiles/client/client.o -o client.o 
+client: build
+	$(CXX) $(CXXFLAGS) Client.cc -o client.o 
 
 build:
 	mkdir -p buildFiles
