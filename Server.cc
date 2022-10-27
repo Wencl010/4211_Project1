@@ -15,22 +15,22 @@
 #define PORT 4211
 #define QUEUE_LEN 50
 
-std::string printSubs(std::vector<Subscription*> subs, bool printTopics){
-    std::string print = "# ";
-    Subscription* current = NULL;
-    for(int i = 0; i < subs.size(); i++){
-        current = subs.at(i);
+// std::string printSubs(std::vector<Subscription*> subs, bool printTopics){
+//     std::string print = "# ";
+//     Subscription* current = NULL;
+//     for(int i = 0; i < subs.size(); i++){
+//         current = subs.at(i);
         
-        if(printTopics){
-            print += current->getTopic()->getName() + ", ";
+//         if(printTopics){
+//             print += current->getTopic()->getName() + ", ";
 
-        }
-        else{
-            print += std::to_string(current->getClient()) + ", ";
-        }
-    }
-    return print;
-}
+//         }
+//         else{
+//             print += std::to_string(current->getClient()) + ", ";
+//         }
+//     }
+//     return print;
+// }
 
 int main(){
     TopicManager topicMgr;    
