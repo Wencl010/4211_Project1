@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <unistd.h> 
 
 //socket includes
 #include <sys/types.h>
@@ -40,8 +41,8 @@ int main(){
     int tempClientFd;
     std::vector<int> clientFd; //ToDo: consider only using subscriptions to manage these.
 
-    struct sockaddr serverAddr;
-    struct sockaddr clientAddr;
+    struct sockaddr_in serverAddr;
+    struct sockaddr_in clientAddr;
 
     //Open Socket File Descriptor
     serverFd = socket(PF_INET, SOCK_STREAM, 0);
@@ -52,7 +53,7 @@ int main(){
 
     //Set Socket options to allow port reuse
     int enable = 1;
-    if(setsockopt(serverFd, SO_REUSEADDR, &enable, sizeof(int)) == -1){
+    if(setsockopt(serverFd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) == -1){
         perror("Set reuse errors");
         exit(-1);
     }
@@ -62,9 +63,9 @@ int main(){
     serverAddr.sin_port = htons(PORT);
     
     //Bind server to localhost
-    if(bind(serverFd, &serverAddr, sizeof(serverAddr)) == -1){
+    if(bind(serverFd, (struct sockaddr*) &serverAddr, sizeof(serverAddr)) == -1){
         perror("Bind error");
-        exit(-1)
+        exit(-1);
     }
 
     if(listen(serverFd, QUEUE_LEN) == -1){
@@ -73,31 +74,31 @@ int main(){
     }
 
     std::cout << "start accepting connections:\n\n";
-    int clientAddrSize = sizeof(clientAddr);
-    std::string msg = "Hello World\n";
+    socklen_t clientAddrSize = sizeof(clientAddr);
+    char msg[] = "Hello World\n";
 
     for(int i =0; i<5; i++){
-        tempClientFd = accept(serverFd, &clientAddr, &clientAddrSize);
+        tempClientFd = accept(serverFd, (struct sockaddr*) &clientAddr, &clientAddrSize);
         if(tempClientFd == -1){
             perror("Problem accepting connection");
             continue; //Jump to next loop and wait for next connection
         }
 
         std::cout<< i << ") Connection made\n";
-        if(write(tempClientFd, msg, sizeof(msg)) == -1){perror("Write Failed")}
+        if(write(tempClientFd, msg, sizeof(msg)) == -1){perror("Write Failed");}
         
         clientFd.push_back(tempClientFd);
     }
     std::cout << "stop accepting connections.\n";
 
-    msg = "Goodbye";
+    char msg2[] = "Goodbye";
     for(int i = 0; i<clientFd.size(); i++){
-       if(write(clientFd.at(i), msg, sizeof(msg)) == -1){perror("Write Failed")}
+       if(write(clientFd.at(i), msg2, sizeof(msg2)) == -1){perror("Write Failed");}
         close(clientFd.at(i));
     }
 
     std::cout << "Goodbyes sent.\n";
 
-    close(serverAddr);
+    close(serverFd);
 
 }
