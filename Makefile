@@ -1,7 +1,7 @@
 CXX=g++
 CXXFLAGS = -std=c++11 -g
 
-all: build server
+all: build server client
 
 server: build serverMain.o Topic.o Subscription.o
 	$(CXX) $(CXXFLAGS) buildFiles/server/serverMain.o buildFiles/server/Topic.o buildFiles/server/Subscription.o -o server.o 
@@ -12,6 +12,8 @@ Topic.o: Topic.cc Topic.h
 Subscription.o: Subscription.cc Subscription.h
 	$(CXX) $(CXXFLAGS) -c Subscription.cc -o buildFiles/server/Subscription.o
 
+client: build client.cc
+	$(CXX) $(CXXFLAGS) buildFiles/client/client.o -o client.o 
 
 build:
 	mkdir -p buildFiles
@@ -22,5 +24,8 @@ clean:
 	rm -rf buildFiles
 	rm *.o 
 
-runServer: 
+run_server: 
 	./server.o
+
+run_client: 
+	./client.o
