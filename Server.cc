@@ -1,7 +1,7 @@
 #include <iostream>
 #include <vector>
-#include <string>
 #include <unistd.h> 
+
 
 //socket includes
 #include <sys/types.h>
@@ -13,8 +13,9 @@
 #include "Topic.h"
 #include "Subscription.h"
 
-#define PORT 4211
-#define QUEUE_LEN 50
+#define PORT 4212
+#define QUEUE_LEN 15
+#define MSGSIZE 128
 
 // std::string printSubs(std::vector<Subscription*> subs, bool printTopics){
 //     std::string print = "# ";
@@ -75,7 +76,8 @@ int main(){
 
     std::cout << "start accepting connections:\n\n";
     socklen_t clientAddrSize = sizeof(clientAddr);
-    char msg[] = "Hello World\n";
+
+    char msg[] = "Hello World";
 
     for(int i =0; i<5; i++){
         tempClientFd = accept(serverFd, (struct sockaddr*) &clientAddr, &clientAddrSize);
@@ -84,10 +86,12 @@ int main(){
             continue; //Jump to next loop and wait for next connection
         }
 
-        std::cout<< i << ") Connection made\n";
-        if(write(tempClientFd, msg, sizeof(msg)) == -1){perror("Write Failed");}
+        std::cout<< i << ") Connection made: "<<inet_ntoa(clientAddr.sin_addr)<<"\n";
+        int wrote = write(tempClientFd, msg, sizeof(msg));
+        if(wrote == -1){perror("Write Failed");}
         
         clientFd.push_back(tempClientFd);
+        std::cout << "Wrote: "<< wrote<<"\n";
     }
     std::cout << "stop accepting connections.\n";
 
