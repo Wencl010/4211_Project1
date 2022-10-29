@@ -176,10 +176,18 @@ int main(){
 
         write(tempClientFd, &msgPck, sizeof(MsgPacket));
 
-        sleep(30);
+        sleep(10);
+
+        msgPck.type = MT_Disc_ACK;
+        strcpy(msgPck.topic, "Test2");
+        strcpy(msgPck.msg, "Hello World");
+
+        write(tempClientFd, &msgPck, sizeof(MsgPacket));
+
+        sleep(10);
 
         msgPck.type = MT_Publish;
-        strcpy(msgPck.topic, "Test2");
+        strcpy(msgPck.topic, "Test3");
         strcpy(msgPck.msg, "Hello World");
 
         write(tempClientFd, &msgPck, sizeof(MsgPacket));
