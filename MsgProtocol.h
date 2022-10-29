@@ -2,12 +2,13 @@
 #define MSG_PROTOCOL_H
 
 
-#include <string>
+#include <cstring>
 
 /**
  * Enumerator to communicate the purpose of the message
  */
 enum MsgType {
+    MT_NULL,
     MT_Connect, 
     MT_Conn_ACK,
     MT_Disconnect,
@@ -39,10 +40,19 @@ std::string typeToString(MsgType x){
     }
 }
 void printMsg(MsgPacket msg){
-    std::cout << "Type: " << typeToString(msg.type) <<"\n";
+    std::cout << "\nType: " << typeToString(msg.type) <<"\n";
     std::cout << "Retain: " << msg.retain<<"\n";
     std::cout << "Topic: " << msg.topic<<"\n";
     std::cout << "Msg: " << msg.msg<<"\n";
+}
+
+MsgPacket initMsgPacket(){
+    MsgPacket newPck;
+    newPck.type = MT_NULL;
+    strcpy(newPck.topic, "");
+    strcpy(newPck.msg, "");
+    newPck. retain = false;
+    return newPck;
 }
 
 #endif

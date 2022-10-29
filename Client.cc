@@ -15,8 +15,8 @@ int connectToServer();
 int disconnectFromServer();
 void listenOnServer();
 void endListen(int sig);
-void subscribeToTopic(){}
-void publishMessage(){}
+void subscribeToTopic();
+void publishMessage();
 
 #define PORT 4211
 
@@ -33,13 +33,14 @@ int main(){
 
     bool run = true;
     while(run){
-        std::cout << "\nOptions: \nL - listen for messages in subscriptions\nS - subscribe to messages\nP - publish a message\nQ - quit\n";
+        std::cout << "\n------------------------------------------------\n";
+        std::cout << "Options: \nL - listen for messages in subscriptions\nS - subscribe to messages\nP - publish a message\nQ - quit\n";
+        std::cout << "------------------------------------------------\n";
         std::cout << "Enter choice: ";
 
-        std::cin >> userInput;
-
-        std::cout << "\n";
-
+        getline(std::cin, userInput);
+        std::cout << "\n\n\n\n\n\n";
+        
         if(userInput == "L"){
             listenOnServer();
         }
@@ -59,7 +60,7 @@ int main(){
 
     /* End of execution cleanup*/
     disconnectFromServer();
-    return;
+    return 0;
 }
 
 
@@ -90,21 +91,21 @@ int connectToServer(){
 
 
     //exchange connect messages with server
-    MsgPacket connectMsg; 
+    MsgPacket connectMsg = initMsgPacket(); 
     connectMsg.type = MT_Connect;
-    if(write(socketFd, &connectMsg, sizeof(MsgPacket))==-1){perror("Server Connection Failed"); exit(1);}
+    if(write(socketFd, &connectMsg, sizeof(MsgPacket))==-1){perror("Server Connection Failed"); exit(-1);}
     std::cout << "Connection request sent\n";
 
     //wait for response form server
-    MsgPacket response; 
-    if(read(socketFd, &response, sizeof(MsgPacket))==-1){perror("Server Ack Failed"); exit(1);}
+    MsgPacket response = initMsgPacket(); 
+    if(read(socketFd, &response, sizeof(MsgPacket))==-1){perror("Server Ack Failed"); exit(-1);}
     //process response from server
     if(response.type == MT_Conn_ACK){
         std::cout << "Connection acknowledged\n";
     }
     else{
         perror("Server Failed to acknowledge connection.");
-        exit(-1);
+        exit(-1); 
     }
 
     return socketFd;
@@ -115,17 +116,17 @@ int connectToServer(){
  * Ends connection with server with proper disconnect messages
  * 
  * @param serverFd the server to disconnect from
- * @return 1 if successfully disconnected 0 otherwise 
+ * @return 0 if successfully disconnected 1 otherwise 
  */
 int disconnectFromServer(){
     //exchange connect messages with server
-    MsgPacket disconnectMsg; 
+    MsgPacket disconnectMsg = initMsgPacket(); 
     disconnectMsg.type = MT_Disconnect;
     if(write(serverFd, &disconnectMsg, sizeof(MsgPacket))==-1){perror("Server Disconnect Failed"); return -1;}
     std::cout << "Disconnect request sent\n";
 
     //wait for response from server
-    MsgPacket response; 
+    MsgPacket response = initMsgPacket(); 
     if(read(serverFd, &response, sizeof(MsgPacket))==-1){perror("Server Ack Failed"); return -1;}
     //process response from server
     if(response.type == MT_Disc_ACK){
@@ -138,7 +139,7 @@ int disconnectFromServer(){
 
     close(serverFd);
     std::cout<<"Server closed\n";
-    return 1;
+    return 0;
 }
 
 /**
@@ -155,13 +156,13 @@ void listenOnServer(){
 
     listening = true; //changed to false by the interrupt handler on ^C
 
-    MsgPacket serverMsg;
+    MsgPacket serverMsg = initMsgPacket();
     while(listening){
         std::cout << "Waiting for messages... Use ^C to return to menu\n";
 
         //Wait for message from server
         int readSize = read(serverFd, &serverMsg, sizeof(MsgPacket));
-        if(readSize == -1){perror("Write Failed");}
+        if(readSize == -1){perror("Read Failed");}
 
         if(serverMsg.type == MT_Publish){ //Check if the message is a published message, print the message if it is
             std::cout << "Message Received: \n\n";
@@ -185,4 +186,76 @@ void listenOnServer(){
  */
 void endListen(int sig){
     listening = false;
+}
+
+void subscribeToTopic(){
+    std::string userInput;
+    MsgPacket sub = initMsgPacket();
+
+    sub.type = MT_Subscribe;
+    
+
+    bool inputIsCorrect = false;
+    do {
+        std::cout << "Enter Topic: ";
+        getline(std::cin, userInput);
+
+        if(userInput.length() < 70){
+            inputIsCorrect = true;
+            strcpy(sub.topic, userInput.c_str());
+        }
+        else{
+            std::cout << "\nTopic must be less than 70 characters.\n";
+        }
+    } while(!inputIsCorrect);
+
+    if(write(serverFd, &sub, sizeof(MsgPacket))==-1){perror("Write Failed");}
+
+    std::cout << "\nSubscription sent to server.\n";
+
+    //TODO: Implement Retain
+}
+
+void publishMessage(){
+    std::string userInput;
+    MsgPacket pub = initMsgPacket();
+    pub.type = MT_Publish;
+
+    bool inputIsCorrect = false;
+    do {
+        std::cout << "Enter Topic: ";
+        getline(std::cin, userInput);
+
+        if(userInput.length() < 70){
+            inputIsCorrect = true;
+            strcpy(pub.topic, userInput.c_str());
+        }
+        else{
+            std::cout << "\nTopic must be less than 70 characters.\n";
+        }
+    } while(!inputIsCorrect);
+
+    std::cout<<"\n";
+
+    inputIsCorrect = false;
+    do {
+        std::cout << "Enter Message: ";
+        getline(std::cin, userInput);
+
+        if(userInput.length() < 948){
+            inputIsCorrect = true;
+            strcpy(pub.msg, userInput.c_str());
+        }
+        else{
+            std::cout << "\nMessage must be less than 948 characters.\n";
+        }
+    } while(!inputIsCorrect);
+
+    //TODO: Implement Retain
+
+
+    if(write(serverFd, &pub, sizeof(MsgPacket))==-1){perror("Write Failed");}
+
+    std::cout << "\nPublish request sent to server.\n";
+
 }

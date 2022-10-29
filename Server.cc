@@ -85,36 +85,38 @@ int startServerSocket(){
  * 
  * @param socketFd a file descriptor of the socket that the response was from
  * @param response a MsgOacket object that holds the response details
- * @return 1 if the port is functioning properly. 0 if the fd has been closed or there is a port error
+ * @return 0 if the port is functioning properly. 1 if the fd has been closed or there is a port error
  */
 int handleResponse(int socketFd, MsgPacket response){
-    printMsg(response);
-
     if(response.type == MT_Connect){
-        MsgPacket msgPck;
+        MsgPacket msgPck = initMsgPacket();
         msgPck.type = MT_Conn_ACK;
         if(write(socketFd, &msgPck, sizeof(MsgPacket))==-1){perror("Write Failed"); return -1;}
-        return 1;
+        return 0;
     }
     else if(response.type == MT_Disconnect){
-        MsgPacket msgPck;
+        MsgPacket msgPck = initMsgPacket();
         msgPck.type = MT_Disc_ACK;
         if(write(socketFd, &msgPck, sizeof(MsgPacket))==-1){perror("Write Failed"); return -1;}
 
-//TODO: Delete all subscriptions
+        //TODO: Delete all subscriptions
 
         close(socketFd);
         return -1;
     }
     else if(response.type == MT_Publish){
+        printMsg(response);
+        return 0;
 
     }
     else if(response.type == MT_Subscribe){
-
+        printMsg(response);
+        return 0;
     }
-
-    perror("Unknown Response");
-    return -1;
+    else{
+        perror("Unknown Response");
+        return -1;
+    }
     
 }
 
@@ -125,9 +127,9 @@ int handleResponse(int socketFd, MsgPacket response){
  * @param clientFd the file descriptor of the socket to handle
  */
 void handleClient(int clientFd){
-    MsgPacket response;
-    int open = 1;
-    while(open == 1){
+    MsgPacket response = initMsgPacket();
+    int open = 0;
+    while(open == 0){
         int readSize = read(clientFd, &response, sizeof(MsgPacket));
         if(readSize == -1){perror("Write Failed");}
 
@@ -152,7 +154,7 @@ int main(){
     struct sockaddr_in clientAddr;
     socklen_t clientAddrSize = sizeof(clientAddr);
 
-    MsgPacket msgPck;
+    MsgPacket msgPck = initMsgPacket();
 
     for(int i =0; i<1; i++){
         tempClientFd = accept(serverFd, (struct sockaddr*) &clientAddr, &clientAddrSize);
@@ -163,40 +165,8 @@ int main(){
 
         std::cout<<"Connection made: "<<inet_ntoa(clientAddr.sin_addr)<<"\n";
         
-        //handleClient(tempClientFd);
+        handleClient(tempClientFd);
         //clientFd.push_back(tempClientFd);
-        int readSize = read(tempClientFd, &msgPck, sizeof(MsgPacket));
-        if(readSize == -1){perror("Write Failed");}
-
-        handleResponse(tempClientFd, msgPck);
-
-        msgPck.type = MT_Publish;
-        strcpy(msgPck.topic, "Test");
-        strcpy(msgPck.msg, "Hello World");
-
-        write(tempClientFd, &msgPck, sizeof(MsgPacket));
-
-        sleep(10);
-
-        msgPck.type = MT_Disc_ACK;
-        strcpy(msgPck.topic, "Test2");
-        strcpy(msgPck.msg, "Hello World");
-
-        write(tempClientFd, &msgPck, sizeof(MsgPacket));
-
-        sleep(10);
-
-        msgPck.type = MT_Publish;
-        strcpy(msgPck.topic, "Test3");
-        strcpy(msgPck.msg, "Hello World");
-
-        write(tempClientFd, &msgPck, sizeof(MsgPacket));
-
-        readSize = read(tempClientFd, &msgPck, sizeof(MsgPacket));
-        if(readSize == -1){perror("Write Failed");}
-
-        handleResponse(tempClientFd, msgPck);
-
     }
 
 
