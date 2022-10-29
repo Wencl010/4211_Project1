@@ -1,6 +1,8 @@
 #include <iostream>
 #include <vector>
 #include <unistd.h> 
+#include "MsgProtocol.h"
+#include <cstring>
 
 
 //socket includes
@@ -35,8 +37,8 @@
 // }
 
 int main(){
-    TopicManager topicMgr;    
-    SubscriptionManager subMgr;
+    // TopicManager topicMgr;    
+    // SubscriptionManager subMgr;
 
     int serverFd; 
     int tempClientFd;
@@ -74,30 +76,39 @@ int main(){
         exit(-1);
     }
 
-    std::cout << "start accepting connections:\n\n";
+    std::cout << "Start accepting client connections:\n";
     socklen_t clientAddrSize = sizeof(clientAddr);
 
-    char msg[] = "Hello World";
+    MsgPacket msgPck;
+    msgPck.type = MT_Conn_ACK;
+    msgPck.retain = true;
+    strcpy(msgPck.topic,"Test");
 
-    for(int i =0; i<5; i++){
+    for(int i =0; i<3; i++){
         tempClientFd = accept(serverFd, (struct sockaddr*) &clientAddr, &clientAddrSize);
         if(tempClientFd == -1){
             perror("Problem accepting connection");
             continue; //Jump to next loop and wait for next connection
         }
 
-        std::cout<< i << ") Connection made: "<<inet_ntoa(clientAddr.sin_addr)<<"\n";
-        int wrote = write(tempClientFd, msg, sizeof(msg));
+        strcpy(msgPck.msg, "imessaghhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhe");
+
+        std::cout<<"Connection made: "<<inet_ntoa(clientAddr.sin_addr)<<"\n";
+        
+        int wrote = write(tempClientFd, &msgPck, MSG_PACKET_SIZE);
         if(wrote == -1){perror("Write Failed");}
         
         clientFd.push_back(tempClientFd);
-        std::cout << "Wrote: "<< wrote<<"\n";
+        std::cout << "Wrote: "<< wrote<<" of: "<<sizeof(msgPck)<<"\n";
     }
-    std::cout << "stop accepting connections.\n";
 
-    char msg2[] = "Goodbye";
+    msgPck.type = MT_Disconnect;
+    msgPck.retain = false;
+     strcpy(msgPck.topic, "");
+     strcpy(msgPck.msg, "bye");
+
     for(int i = 0; i<clientFd.size(); i++){
-       if(write(clientFd.at(i), msg2, sizeof(msg2)) == -1){perror("Write Failed");}
+       if(write(clientFd.at(i), &msgPck, MSG_PACKET_SIZE) == -1){perror("Write Failed");}
         close(clientFd.at(i));
     }
 

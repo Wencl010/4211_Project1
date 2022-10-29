@@ -6,12 +6,15 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include "MsgProtocol.h"
+
 #define PORT 4212
-#define MAX_MSG 128
 
 int main(){
     int msgSize; 
-    char msg[1024];
+    MsgPacket msgPck;
+    MsgPacket msgPck2;
+
 
     //Open Socket File Descriptor
     int socketFd = socket(PF_INET, SOCK_STREAM, 0);
@@ -31,22 +34,24 @@ int main(){
     }
     std::cout<<"Connection Open:\n\n";
 
-    msgSize = read(socketFd, msg, MAX_MSG - 1);
+    msgSize = read(socketFd, &msgPck, MSG_PACKET_SIZE);
     if(msgSize == -1){
         perror("Read Error");
         exit(-1);
     }
-    msg[msgSize] = '\0';
-    std::cout << msg <<"\n";
 
-    msgSize = read(socketFd, msg, MAX_MSG - 1);
+    std::cout << msgSize <<"\n";
+    printMsg(msgPck);
+    std::cout <<"\n";
+
+
+    msgSize = read(socketFd, &msgPck2, MSG_PACKET_SIZE);
     if(msgSize == -1){
         perror("Read Error");
         exit(-1);
     }
-    msg[msgSize] = '\0';
-    std::cout << msg<<"\n";
-
+    std::cout << msgSize <<"\n";
+    printMsg(msgPck2);
     close(socketFd);
 
     std::cout<<"Connection Closed\n";
