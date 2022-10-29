@@ -4,6 +4,9 @@
 
 #include <string>
 
+/**
+ * Enumerator to communicate the purpose of the message
+ */
 enum MsgType {
     MT_Connect, 
     MT_Conn_ACK,
@@ -13,6 +16,9 @@ enum MsgType {
     MT_Subscribe
 };
 
+/**
+ * Data struture to facilitate passing all pieces of the message
+ */
 struct MsgPacket {
     MsgType type;
     char topic[70];
@@ -20,10 +26,7 @@ struct MsgPacket {
     bool retain;
 };
 
-const int MSG_PACKET_SIZE = sizeof(MsgPacket);
-
-
-
+//Helper functions for debugging transmission errors
 std::string typeToString(MsgType x){
     switch(x){
         case MT_Connect: return "Connect";

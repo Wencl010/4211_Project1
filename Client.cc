@@ -34,7 +34,7 @@ int main(){
     }
     std::cout<<"Connection Open:\n\n";
 
-    msgSize = read(socketFd, &msgPck, MSG_PACKET_SIZE);
+    msgSize = read(socketFd, &msgPck, sizeof(MsgPacket));
     if(msgSize == -1){
         perror("Read Error");
         exit(-1);
@@ -45,7 +45,7 @@ int main(){
     std::cout <<"\n";
 
 
-    msgSize = read(socketFd, &msgPck2, MSG_PACKET_SIZE);
+    msgSize = read(socketFd, &msgPck2, sizeof(MsgPacket));
     if(msgSize == -1){
         perror("Read Error");
         exit(-1);

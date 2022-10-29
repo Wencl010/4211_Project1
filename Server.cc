@@ -95,7 +95,7 @@ int main(){
 
         std::cout<<"Connection made: "<<inet_ntoa(clientAddr.sin_addr)<<"\n";
         
-        int wrote = write(tempClientFd, &msgPck, MSG_PACKET_SIZE);
+        int wrote = write(tempClientFd, &msgPck, sizeof(MsgPacket));
         if(wrote == -1){perror("Write Failed");}
         
         clientFd.push_back(tempClientFd);
@@ -108,7 +108,7 @@ int main(){
      strcpy(msgPck.msg, "bye");
 
     for(int i = 0; i<clientFd.size(); i++){
-       if(write(clientFd.at(i), &msgPck, MSG_PACKET_SIZE) == -1){perror("Write Failed");}
+       if(write(clientFd.at(i), &msgPck, sizeof(MsgPacket)) == -1){perror("Write Failed");}
         close(clientFd.at(i));
     }
 
