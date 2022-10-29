@@ -145,7 +145,7 @@ int disconnectFromServer(int serverFd){
  * Will Listen until a keyboard interrupt of "ctrl + C" is received
  */
 void listenOnServer(int serverFd){
-    //Set "ctrl + c" interrupt to return to exit listening mode
+    //Set "ctrl + c" interrupt to return to the options menu
     struct sigaction action;
     action.sa_handler = endListen;
     sigemptyset(&action.sa_mask);
