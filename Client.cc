@@ -12,21 +12,19 @@
 #include "MsgProtocol.h"
 
 int connectToServer();
-int disconnectFromServer();
-void listenOnServer();
+int disconnectFromServer(int serverFd);
+void listenOnServer(int serverFd);
 void endListen(int sig);
-void subscribeToTopic();
-void publishMessage();
+void subscribeToTopic(int serverFd);
+void publishMessage(int serverFd);
 
 #define PORT 4211
-
-struct sigaction action; 
-int serverFd;
+ 
 bool listening = false;
 
 
 int main(){
-    serverFd = connectToServer(); //open serverFD, exits the program upon error
+    int serverFd = connectToServer(); //open serverFD, exits the program upon error
 
     /* Runs main UI Menu*/
     std::string userInput;
@@ -42,13 +40,13 @@ int main(){
         std::cout << "\n\n\n\n\n\n";
         
         if(userInput == "L"){
-            listenOnServer();
+            listenOnServer(serverFd);
         }
         else if(userInput == "S"){
-            subscribeToTopic();
+            subscribeToTopic(serverFd);
         }
         else if(userInput == "P"){
-            publishMessage();
+            publishMessage(serverFd);
         }
         else if(userInput == "Q"){
             run = false;
@@ -59,7 +57,7 @@ int main(){
     }
 
     /* End of execution cleanup*/
-    disconnectFromServer();
+    disconnectFromServer(serverFd);
     return 0;
 }
 
@@ -118,7 +116,7 @@ int connectToServer(){
  * @param serverFd the server to disconnect from
  * @return 0 if successfully disconnected 1 otherwise 
  */
-int disconnectFromServer(){
+int disconnectFromServer(int serverFd){
     //exchange connect messages with server
     MsgPacket disconnectMsg = initMsgPacket(); 
     disconnectMsg.type = MT_Disconnect;
@@ -146,8 +144,9 @@ int disconnectFromServer(){
  * Read From the server socket and print out any publish messages received. 
  * Will Listen until a keyboard interrupt of "ctrl + C" is received
  */
-void listenOnServer(){
+void listenOnServer(int serverFd){
     //Set "ctrl + c" interrupt to return to exit listening mode
+    struct sigaction action;
     action.sa_handler = endListen;
     sigemptyset(&action.sa_mask);
     sigaddset(&action.sa_mask, SIGINT);
@@ -188,7 +187,7 @@ void endListen(int sig){
     listening = false;
 }
 
-void subscribeToTopic(){
+void subscribeToTopic(int serverFd){
     std::string userInput;
     MsgPacket sub = initMsgPacket();
 
@@ -216,7 +215,7 @@ void subscribeToTopic(){
     //TODO: Implement Retain
 }
 
-void publishMessage(){
+void publishMessage(int serverFd){
     std::string userInput;
     MsgPacket pub = initMsgPacket();
     pub.type = MT_Publish;
