@@ -6,8 +6,8 @@ Wencl010@umn.edu
 ## Extract & Build
 Extract with
 ```
-tar –xzvf wencl010_4211_project1.tar.gz
-cd wencl010_4211_project1
+tar -xzvf wencl010_4211_Project1.tar.gz
+cd wencl010_4211_Project1
 ```
 
 To compile the whole project at once use: 
