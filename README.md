@@ -70,7 +70,7 @@ Waiting for messages... Use ^C to return to menu
 ```
 When in listening mode Ctrl + C will take users back to the options menu.
 #### Server:
-Once the server starts the main thread waits for new connections. For each connection it spawns a worker thread. The worker threads wait until they receive a message from a client then handle the message (create a subscription or publish a message) and replying before returning to listen mode. The workers share one TopicManager instance and one SubscriptionManager instance, access to these is controlled with a mutex lock. 
+Once the server starts the main thread waits for new connections. For each connection it spawns a worker thread. The worker threads wait until they receive a message from a client then handle the message (create a subscription or publish a message) and reply before returning to listen mode. The workers all share one TopicManager instance and one SubscriptionManager instance to handle subscriptions. The access to these instances is controlled with two mutex locks, one for topics and one for subscriptions. 
 ##### Topics:
 The topics.h file contains both the Topic and TopicManager classes. The Topic class holds the name and retainMsg of a topic, as well as any child topics that are under it. The TopicManager handles the highest level topics and gives an interface to add and create topics deep in the tree.
 ##### Subscriptions:
