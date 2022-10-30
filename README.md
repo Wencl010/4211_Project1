@@ -42,7 +42,7 @@ This project is an implementation of a message board server. Clients can publish
 
 ## Implmenataion
 #### Basic Comunication:
-This project was implemented with C++ socketprogramming. A messaging format was defined in MsgProtocl.h as seen below.
+This project was implemented with C++ socket programming. A messaging format was defined in MsgProtocl.h as seen below.
 ```c++
 struct MsgPacket {
     MsgType type;
@@ -64,15 +64,15 @@ Q - quit
 ------------------------------------------------
 Enter choice:
 ```
-The client code automatically handles the setup of the server socket and exchanges connect messages with the server. The UI allows access to send the server requests to subscribe to a topic, publish messages to topics, and disconnect. Upon selection of subscribe or publish, the user will be prompted for more information. It also allows users to listen to the server. Users must be in listen mode to recieve any published messages.
+The client code automatically handles the setup of the server socket and exchanges connect messages with the server. The UI allows access to send the server requests to subscribe to a topic, publish messages to topics, and disconnect. Upon selection of subscribe or publish, the user will be prompted for more information. It also allows users to listen to the server. Users must be in listen mode to receive any published messages.
 ```
 Waiting for messages... Use ^C to return to menu
 ```
 When in listening mode Ctrl + C will take users back to the options menu.
 #### Server
-Once the server starts the main thread waits for new connections. For each connection it spawns a worker thread. The worker threads wait until they reiceive a message from a client then handle the message (create a subscription or publish a message) and replying before returning to listen mode. The workers share one TopicManager instance and one SubscriptionManager instance, access to these is controlled with a mutex lock. 
+Once the server starts the main thread waits for new connections. For each connection it spawns a worker thread. The worker threads wait until they receive a message from a client then handle the message (create a subscription or publish a message) and replying before returning to listen mode. The workers share one TopicManager instance and one SubscriptionManager instance, access to these is controlled with a mutex lock. 
 ##### Topics
 The topics.h file contains both the Topic and TopicManager classes. The Topic class holds the name and retainMsg of a topic, as well as any child topics that are under it. The TopicManager handles the highest level topics and gives an interface to add and create topics deep in the tree.
 ##### Subscriptions
-The subscription.h file both the Subscription and SubscriptionManager classes. Much like the Topic class, the Subscription class holds the information of a single subscription, namely the client's socket file descriptod and a pointer to the topic. SubscriptionManager keeps track of all the subscription and provides methods for accessing all of them.
+The subscription.h file both the Subscription and SubscriptionManager classes. Much like the Topic class, the Subscription class holds the information of a single subscription, namely the client's socket file descriptor and a pointer to the topic. SubscriptionManager keeps track of all the subscription and provides methods for accessing all of them.
 
