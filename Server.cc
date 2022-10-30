@@ -137,7 +137,7 @@ void publish(int socketFd, MsgPacket response){
 
     if(subTopic == NULL){
         sendError(socketFd, "Topic not found\n");
-        std::cout << socketFd <<": Sub Error - Topic Not Found\n";
+        std::cout << socketFd <<": Pub Error - Topic Not Found\n";
          //TODO:create topics
         // topicLock->lock();
         // topicMgr->createTopic(socketFd, subTopic);
