@@ -2,24 +2,26 @@
 Billy Wencl  
 5544600  
 Wencl010@umn.edu  
-  
-  
-## Build
+
+## Extract & Build
+Extract with
+```
+tar –xzvf wencl010_4211_project1.tar.gz
+cd wencl010_4211_project1
+```
+
 To compile the whole project at once use: 
 ```
-    cd /path/to/repo/project
     make
 ```
   
 To compile/recompile only the server files use:
 ```
-    cd /path/to/repo/project
     make server
 ```
   
 To compile/recompile only the client files use:
 ```
-    cd /path/to/repo/project
     make client
 ```
 
