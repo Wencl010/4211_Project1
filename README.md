@@ -1,7 +1,11 @@
 # 4211_Project1
 Billy Wencl
+
 5544600
+
 Wencl010@umn.edu
+
+
 
 ### Build
 To compile the whole project at once use: 
@@ -11,11 +15,13 @@ To compile the whole project at once use:
  ```
 
 
+
 To compile/recompile only the server files use:
 ```bash
     cd /path/to/repo/project
     make server
 ```
+
 
 
 To compile/recompile only the client files use:
@@ -24,6 +30,8 @@ To compile/recompile only the client files use:
     make client
 ```
 
+
+
 ### Run
 To start the server:
 ```bash
@@ -31,9 +39,10 @@ To start the server:
 ```
 
 
+
 To start the client:
 ```bash
-    make client
+    make run_client
 ```
 
 ## Current Limitations
