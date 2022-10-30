@@ -69,10 +69,10 @@ The client code automatically handles the setup of the server socket and exchang
 Waiting for messages... Use ^C to return to menu
 ```
 When in listening mode Ctrl + C will take users back to the options menu.
-#### Server
+#### Server:
 Once the server starts the main thread waits for new connections. For each connection it spawns a worker thread. The worker threads wait until they receive a message from a client then handle the message (create a subscription or publish a message) and replying before returning to listen mode. The workers share one TopicManager instance and one SubscriptionManager instance, access to these is controlled with a mutex lock. 
-##### Topics
+##### Topics:
 The topics.h file contains both the Topic and TopicManager classes. The Topic class holds the name and retainMsg of a topic, as well as any child topics that are under it. The TopicManager handles the highest level topics and gives an interface to add and create topics deep in the tree.
-##### Subscriptions
+##### Subscriptions:
 The subscription.h file both the Subscription and SubscriptionManager classes. Much like the Topic class, the Subscription class holds the information of a single subscription, namely the client's socket file descriptor and a pointer to the topic. SubscriptionManager keeps track of all the subscription and provides methods for accessing all of them.
 
