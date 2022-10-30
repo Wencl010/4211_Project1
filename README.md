@@ -6,39 +6,31 @@ Wencl010@umn.edu
   
 ## Build
 To compile the whole project at once use: 
-```bash
+```
     cd /path/to/repo/project
     make
  ```
   
-  
-  
 To compile/recompile only the server files use:
-```bash
+```
     cd /path/to/repo/project
     make server
 ```
   
-  
-  
 To compile/recompile only the client files use:
-```bash
+```
     cd /path/to/repo/project
     make client
 ```
 
-
-
 ## Run
 To start the server:
-```bash
+```
     make run_server
 ```
 
-
-
 To start the client:
-```bash
+```
     make run_client
 ```
 ## Summary
@@ -62,4 +54,19 @@ struct MsgPacket {
 This struct is the sole data format passed between client and server. The MsgType enumerator is used to identify what type of message is being passed. For example: MT_Connect, MT_Conn_ACK, MT_Disconnect, MT_Subscribe... Once the server or client checks the MsgType it knows which fields of the struct to interact with.  
   
 #### Client Interface:
-
+```
+------------------------------------------------
+Options: 
+L - listen for messages in subscriptions
+S - subscribe to messages
+P - publish a message
+Q - quit
+------------------------------------------------
+Enter choice:
+```
+The client code automatically handles the setup of the server socket and exchanges connect messages with the server. The UI allows access to send the server requests to subscribe to a topic, publish messages to topics, and disconnect. Upon selection of subscribe or publish, the user will be prompted for more information. It also allows users to listen to the server. Users must be in listen mode to recieve any published messages.
+```
+Waiting for messages... Use ^C to return to menu
+```
+When in listening mode Ctrl + C will take users back to the options menu.
+#### Server
