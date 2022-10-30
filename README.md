@@ -40,8 +40,8 @@ This project is an implementation of a message board server. Clients can publish
 - Topic paths must be less than 70 characters in length
 - Messages must be less than 948 characters in length
 
-## Implmenataion
-#### Basic Comunication:
+## Implementation
+#### Basic Communication:
 This project was implemented with C++ socket programming. A messaging format was defined in MsgProtocl.h as seen below.
 ```c++
 struct MsgPacket {
