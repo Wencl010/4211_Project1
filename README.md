@@ -9,7 +9,7 @@ To compile the whole project at once use:
 ```
     cd /path/to/repo/project
     make
- ```
+```
   
 To compile/recompile only the server files use:
 ```
