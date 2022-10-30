@@ -236,7 +236,7 @@ void shutDownServer(int sig){
 }
 
 int main(){
-    //Set "ctrl + c" interrupt to return to exit listening mode
+    //Set "ctrl + c" interrupt to gracefully exit with mem deallocation
     struct sigaction action;
     action.sa_handler = shutDownServer;
     sigemptyset(&action.sa_mask);
