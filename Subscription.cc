@@ -96,7 +96,7 @@ void SubscriptionManager::removeSubscription(int clientConFd, Topic* topic){
         current = subscriptions.at(i);
         if(current->getClient() == clientConFd && current->getTopic() == topic){
             delete current;
-            subscriptions.erase(vec.begin() + i);
+            subscriptions.erase(subscriptions.begin() + i);
             i--;
         }
     }

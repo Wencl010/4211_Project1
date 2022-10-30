@@ -267,4 +267,16 @@ void publishMessage(int serverFd){
 
     std::cout << "\nPublish request sent to server.\n";
 
+    MsgPacket response = initMsgPacket();
+    if(read(serverFd, &response, sizeof(MsgPacket)) == -1){perror("Read Failed");}
+
+    if(response.type == MT_Success){
+        std::cout << response.topic << "\n";
+        
+        //TODO: Implement Retain
+    }
+    else{
+        std::cout << "Error: " << response.topic << "\n";
+    }
+
 }
