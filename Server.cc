@@ -28,22 +28,7 @@ std::mutex* database;
 
 int serverFd;
 
-// std::string printSubs(std::vector<Subscription*> subs, bool printTopics){
-//     std::string print = "# ";
-//     Subscription* current = NULL;
-//     for(int i = 0; i < subs.size(); i++){
-//         current = subs.at(i);
-        
-//         if(printTopics){
-//             print += current->getTopic()->getName() + ", ";
 
-//         }
-//         else{
-//             print += std::to_string(current->getClient()) + ", ";
-//         }
-//     }
-//     return print;
-// }
 
 
 /**
@@ -204,6 +189,7 @@ void handleClient(int clientFd){
  */
 void shutDownServer(int sig){
     std::cout << "Shutting Down.\n";
+
     close(serverFd);
     delete topicMgr;
     delete subMgr;

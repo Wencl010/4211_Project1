@@ -34,6 +34,8 @@ class SubscriptionManager{
 
         void addSubscription(int clientConFd, Topic* topic);
         void removeSubscription(int clientConFd, Topic* topic);
+
+        std::string printSubs(); //TODO: delete
 };
 
 
