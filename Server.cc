@@ -24,7 +24,9 @@
 
 TopicManager* topicMgr;    
 SubscriptionManager* subMgr;
-std::mutex* database;
+std::mutex* subLock;
+std::mutex* topicLock;
+
 
 int serverFd;
 
@@ -103,25 +105,59 @@ void sendSuccess(int socketFd, std::string successMsg){
  * @param response the MsgPacket containing the topic
  */
 void subscribe(int socketFd, MsgPacket response){
-    //ToDo: handle topic not existing errors
     Topic* subTopic = topicMgr->getTopic(response.topic);
 
     if(subTopic == NULL){
         sendError(socketFd, "Topic not found\n");
         std::cout << socketFd <<": Sub Error - Topic Not Found\n";
+
+        //TODO:create topics
+        // topicLock->lock();
+        // topicMgr->createTopic(socketFd, subTopic);
+        // topicLock->unlock();
         return;
     }
 
-    database->lock();
-
+    subLock->lock();
     subMgr->addSubscription(socketFd, subTopic);
-
-    database->unlock();
+    subLock->unlock();
 
     sendSuccess(socketFd, "Successfully subscribed\n");
     std::cout << socketFd <<": Subscribed to "<< subTopic->getName()<<"\n";
 }
 
+
+/**
+  * Publishes a message out to all subscribers of the topic
+  * @param socketFd the publisher client's socket
+  * @param response the MsgPacket containing the topic
+  */
+void publish(int socketFd, MsgPacket response){
+    Topic* subTopic = topicMgr->getTopic(response.topic);
+
+    if(subTopic == NULL){
+        sendError(socketFd, "Topic not found\n");
+        std::cout << socketFd <<": Sub Error - Topic Not Found\n";
+         //TODO:create topics
+        // topicLock->lock();
+        // topicMgr->createTopic(socketFd, subTopic);
+        // topicLock->unlock();
+        return;
+    }
+
+    subLock->lock();
+    std::vector<Subscription*> topicSubs = subMgr->getSubByTopic(subTopic);
+    subLock->unlock();
+
+    Subscription* current = NULL;
+    for(int i = 0; i < topicSubs.size(); i++){
+        current = topicSubs.at(i);
+        if(write(current->getClient(), &response, sizeof(MsgPacket))==-1){perror("Message Transmit Failed"); return;}
+    }
+
+    sendSuccess(socketFd, "Successfully Published\n");
+    std::cout << socketFd <<": Published to "<< subTopic->getName()<<"\n";
+}
 
 
 /**
@@ -152,7 +188,7 @@ int handleResponse(int socketFd, MsgPacket response){
         return -1;
     }
     else if(response.type == MT_Publish){
-        printMsg(response);
+        publish(socketFd, response);
         return 0;
 
     }
@@ -193,7 +229,8 @@ void shutDownServer(int sig){
     close(serverFd);
     delete topicMgr;
     delete subMgr;
-    delete database;
+    delete subLock;
+    delete topicLock;
 
     exit(0);
 }
@@ -210,7 +247,8 @@ int main(){
 
     topicMgr = new TopicManager;    
     subMgr = new SubscriptionManager;
-    database = new std::mutex;
+    topicLock = new std::mutex;
+    subLock = new std::mutex;
 
     serverFd = startServerSocket();
 

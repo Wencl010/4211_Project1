@@ -89,14 +89,15 @@ void SubscriptionManager::addSubscription(int clientConFd, Topic* topic){
  * @param topic the topic of the subscription to be deleted
  */
 void SubscriptionManager::removeSubscription(int clientConFd, Topic* topic){
-    std::vector<Subscription*> clientSubs = SubscriptionManager::getSubByClient(clientConFd);
 
-    //loop through all the clients subscriptions, if the subscription to the topic is found delete it
+    //loop through all subscriptions, if a subscription to the client and topic is found delete it
     Subscription* current = NULL;
-    for(int i = 0; i < clientSubs.size(); i++){
-        current = clientSubs.at(i);
-        if(current->getTopic() == topic){
+    for(int i = 0; i < subscriptions.size(); i++){
+        current = subscriptions.at(i);
+        if(current->getClient() == clientConFd && current->getTopic() == topic){
             delete current;
+            subscriptions.erase(vec.begin() + i);
+            i--;
         }
     }
 }

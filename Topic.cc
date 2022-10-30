@@ -121,6 +121,7 @@ Topic* TopicManager::getTopic(std::string topicPath){
 Topic* TopicManager::createTopic(std::string topicPath){
     //TODO: Implement Path Error Checking
     //TODO: Implement Sub Level Spliting
+    //TODO: Implement name checking, don't create path if it exists already
 
     Topic* newTopic = new Topic(topicPath);
     rootTopics.push_back(newTopic);
