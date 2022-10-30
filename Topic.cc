@@ -50,6 +50,7 @@ void Topic::setRetainMsg(std::string msg){
  */
 void Topic::addSubTopic(Topic* topic){
     subTopics.push_back(topic);
+    //ToDo: Check topic hasn't been made yet
 } 
 
 /**

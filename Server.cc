@@ -1,8 +1,10 @@
 #include <iostream>
 #include <vector>
 #include <unistd.h> 
-#include "MsgProtocol.h"
 #include <cstring>
+#include <thread>
+#include <mutex>
+#include <signal.h>
 
 
 //socket includes
@@ -14,9 +16,17 @@
 
 #include "Topic.h"
 #include "Subscription.h"
+#include "MsgProtocol.h"
+
 
 #define PORT 4211
 #define QUEUE_LEN 15
+
+TopicManager* topicMgr;    
+SubscriptionManager* subMgr;
+std::mutex* database;
+
+int serverFd;
 
 // std::string printSubs(std::vector<Subscription*> subs, bool printTopics){
 //     std::string print = "# ";
@@ -78,6 +88,56 @@ int startServerSocket(){
     return serverFd;
 }
 
+/**
+ * Send given error msg to the client.
+ * @param socketFd the socket to send the message to
+ * @param errorMsg error message to send
+ */
+void sendError(int socketFd, std::string errorMsg){
+    MsgPacket errorPck = initMsgPacket(); 
+    errorPck.type = MT_Error;
+    strcpy(errorPck.topic, errorMsg.c_str());
+    if(write(socketFd, &errorPck, sizeof(MsgPacket))==-1){perror("Message Transmit Failed"); return;}
+}
+
+/**
+ * Send given success msg to the client.
+ * @param socketFd the socket to send the message to
+ * @param errorMsg error message to send
+ */
+void sendSuccess(int socketFd, std::string successMsg){
+    MsgPacket successPck = initMsgPacket(); 
+    successPck.type = MT_Success;
+    strcpy(successPck.topic, successMsg.c_str());
+    if(write(socketFd, &successPck, sizeof(MsgPacket))==-1){perror("Message Transmit Failed"); return;}
+}
+
+/**
+ * Subscribe client to topic
+ * @param socketFd the client's socket
+ * @param response the MsgPacket containing the topic
+ */
+void subscribe(int socketFd, MsgPacket response){
+    //ToDo: handle topic not existing errors
+    Topic* subTopic = topicMgr->getTopic(response.topic);
+
+    if(subTopic == NULL){
+        sendError(socketFd, "Topic not found\n");
+        std::cout << socketFd <<": Sub Error - Topic Not Found\n";
+        return;
+    }
+
+    database->lock();
+
+    subMgr->addSubscription(socketFd, subTopic);
+
+    database->unlock();
+
+    sendSuccess(socketFd, "Successfully subscribed\n");
+    std::cout << socketFd <<": Subscribed to "<< subTopic->getName()<<"\n";
+}
+
+
 
 /**
  * Process a response and take the appropriate action such as add the client as 
@@ -92,6 +152,7 @@ int handleResponse(int socketFd, MsgPacket response){
         MsgPacket msgPck = initMsgPacket();
         msgPck.type = MT_Conn_ACK;
         if(write(socketFd, &msgPck, sizeof(MsgPacket))==-1){perror("Write Failed"); return -1;}
+        std::cout << socketFd <<": Connection Acknowledged\n";
         return 0;
     }
     else if(response.type == MT_Disconnect){
@@ -102,6 +163,7 @@ int handleResponse(int socketFd, MsgPacket response){
         //TODO: Delete all subscriptions
 
         close(socketFd);
+        std::cout << socketFd <<": Disconnected\n";
         return -1;
     }
     else if(response.type == MT_Publish){
@@ -110,7 +172,7 @@ int handleResponse(int socketFd, MsgPacket response){
 
     }
     else if(response.type == MT_Subscribe){
-        printMsg(response);
+        subscribe(socketFd, response);
         return 0;
     }
     else{
@@ -134,43 +196,55 @@ void handleClient(int clientFd){
         if(readSize == -1){perror("Write Failed");}
 
         open = handleResponse(clientFd, response);
-
     }
 }
 
-int main(){
-    // TopicManager topicMgr;    
-    // SubscriptionManager subMgr;
+/**
+ * Handles cleanup of server variables
+ */
+void shutDownServer(int sig){
+    std::cout << "Shutting Down.\n";
+    close(serverFd);
+    delete topicMgr;
+    delete subMgr;
+    delete database;
 
-    int serverFd; 
-    int tempClientFd;
-    std::vector<int> clientFd; //ToDo: consider only using subscriptions to manage these.
+    exit(0);
+}
+
+int main(){
+    //Set "ctrl + c" interrupt to return to exit listening mode
+    struct sigaction action;
+    action.sa_handler = shutDownServer;
+    sigemptyset(&action.sa_mask);
+    sigaddset(&action.sa_mask, SIGINT);
+    action.sa_flags = 0;
+    sigaction(SIGINT, &action, NULL);
+
+
+    topicMgr = new TopicManager;    
+    subMgr = new SubscriptionManager;
+    database = new std::mutex;
 
     serverFd = startServerSocket();
 
-
     std::cout << "Start accepting client connections:\n";
-
     struct sockaddr_in clientAddr;
     socklen_t clientAddrSize = sizeof(clientAddr);
+    int tempClientFd;
 
-    MsgPacket msgPck = initMsgPacket();
-
-    for(int i =0; i<1; i++){
+    while(1){
         tempClientFd = accept(serverFd, (struct sockaddr*) &clientAddr, &clientAddrSize);
         if(tempClientFd == -1){
             perror("Problem accepting connection");
             continue; //Jump to next loop and wait for next connection
         }
 
-        std::cout<<"Connection made: "<<inet_ntoa(clientAddr.sin_addr)<<"\n";
+        std::cout << tempClientFd <<": Socket opened to "<<inet_ntoa(clientAddr.sin_addr)<<"\n";
         
-        handleClient(tempClientFd);
-        //clientFd.push_back(tempClientFd);
+        std::thread clientThread(handleClient, tempClientFd);
+        clientThread.detach(); //Todo: Figure out closing sockets when server closes
     }
 
-
-    std::cout << "Shutting Down.\n";
-    close(serverFd);
-
+    shutDownServer(0);
 }

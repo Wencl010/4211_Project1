@@ -212,7 +212,17 @@ void subscribeToTopic(int serverFd){
 
     std::cout << "\nSubscription sent to server.\n";
 
-    //TODO: Implement Retain
+    MsgPacket response = initMsgPacket();
+    if(read(serverFd, &response, sizeof(MsgPacket)) == -1){perror("Read Failed");}
+
+    if(response.type == MT_Success){
+        std::cout << response.topic << "\n";
+        
+        //TODO: Implement Retain
+    }
+    else{
+        std::cout << "Error: " << response.topic << "\n";
+    }
 }
 
 void publishMessage(int serverFd){

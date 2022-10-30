@@ -14,7 +14,9 @@ enum MsgType {
     MT_Disconnect,
     MT_Disc_ACK,
     MT_Publish,
-    MT_Subscribe
+    MT_Subscribe,
+    MT_Success,
+    MT_Error
 };
 
 /**
