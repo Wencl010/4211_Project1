@@ -35,9 +35,11 @@ class Topic{
 class TopicManager{
     private:
         std::vector<Topic*> rootTopics;
+
+        std::vector<std::string> splitPath(std::string);
     
     public:
-        TopicManager(); //TODO: Remove Constructor for phase 2
+        TopicManager();
         ~TopicManager();
         Topic* getTopic(std::string topicPath);
         Topic* createTopic(std::string topicPath);

@@ -1,4 +1,5 @@
 #include "Topic.h"
+#include <iostream>
 
 /*************************Topic*************************/
 
@@ -49,8 +50,9 @@ void Topic::setRetainMsg(std::string msg){
  * @param topic a pointer to the topic to add
  */
 void Topic::addSubTopic(Topic* topic){
-    subTopics.push_back(topic);
-    //ToDo: Check topic hasn't been made yet
+    if(getSubTopic(topic->getName()) == NULL){
+        subTopics.push_back(topic);
+    }
 } 
 
 /**
@@ -72,13 +74,7 @@ Topic* Topic::getSubTopic(std::string name){
 
 
 /*************************Topic Manager*************************/
-TopicManager::TopicManager(){ //TODO: Remove Constructor for phase 2
-    rootTopics.push_back(new Topic("WEATHER"));
-    rootTopics.push_back(new Topic("NEWS"));
-    rootTopics.push_back(new Topic("HEALTH"));
-    rootTopics.push_back(new Topic("SECURITY"));
-
-}
+TopicManager::TopicManager(){}
 
 /**
  * Delete all the root topics in the manager
@@ -97,17 +93,31 @@ TopicManager::~TopicManager(){
  * @return A Topic pointer or null if the topic doesn't exist
  */
 Topic* TopicManager::getTopic(std::string topicPath){
-    //TODO: Implement Path Error Checking
-    //TODO: Implement Sub Level Spliting
-
-    Topic* current = NULL;
-    for(int i = 0; i < rootTopics.size(); i++){
-        current = rootTopics.at(i);
-        if(topicPath.compare(current->getName()) == 0){
-            return current;
-        }
+    //Split path into individual levels
+    std::vector<std::string> topicNames = splitPath(topicPath);
+    if(topicNames.size() == 0){
+        return NULL;
     }
-    return NULL;
+
+    //Get the root topic level
+    Topic* root = NULL;
+    for(int i = 0; i < rootTopics.size(); i++){
+        root = rootTopics.at(i);
+        if((topicNames.at(0)).compare(root->getName()) == 0){
+            break;
+        }
+        root = NULL;
+    }
+    if(root == NULL){return NULL;}//Topic Root not found
+
+    //Looking through sublevels
+    Topic* current = root;
+    for(int i = 1; 1 < topicNames.size(); i++){
+        current = current->getSubTopic(topicNames.at(i));
+        if(current == NULL){return NULL;}
+    }
+
+    return current;
 }
 
 /**
@@ -119,11 +129,71 @@ Topic* TopicManager::getTopic(std::string topicPath){
  * @return A pointer to the new topic
  */
 Topic* TopicManager::createTopic(std::string topicPath){
-    //TODO: Implement Path Error Checking
-    //TODO: Implement Sub Level Spliting
-    //TODO: Implement name checking, don't create path if it exists already
 
-    Topic* newTopic = new Topic(topicPath);
-    rootTopics.push_back(newTopic);
+    Topic* existing = getTopic(topicPath);
+    if(existing != NULL){
+        return existing;
+    }
+
+    //Split path into individual levels
+    std::vector<std::string> topicNames = splitPath(topicPath);
+    if(topicNames.size() == 0){
+        return NULL;
+    }
+
+    Topic* newTopic;
+    //Get the root topic level
+    Topic* root = NULL;
+    for(int i = 0; i < rootTopics.size(); i++){
+        root = rootTopics.at(i);
+        if((topicNames.at(0)).compare(root->getName()) == 0){
+            break;
+        }
+        root = NULL;
+    }
+    if(root == NULL){
+        //create root topic level if it doesn't exist
+        newTopic = new Topic(topicNames.at(0));
+        rootTopics.push_back(newTopic);
+    }
+
+    //Looking through sublevels
+    for(int i = 1; i < topicNames.size(); i++){
+        Topic* checkTopic = NULL;
+        checkTopic = newTopic->getSubTopic(topicNames.at(i));
+        if(checkTopic == NULL){
+            Topic* temp = new Topic(topicNames.at(i));
+            newTopic->addSubTopic(temp);
+            newTopic = temp;
+        }
+        else{
+            newTopic = checkTopic;
+        }
+    }
+    
     return newTopic;
+}
+
+/**
+ * Splits the provided path into it's individual path names and checks
+ * for path errors.
+ * 
+ * @return a vector of path names, with postion 0 being the outermost name. If invalid path NULL
+ */
+std::vector<std::string> TopicManager::splitPath(std::string path){
+    //TODO: handle * and other name errors
+    std::vector<std::string> pathVec;
+    int start = 0;
+    int end = path.find("/"); 
+
+    while(end != -1){
+        pathVec.push_back(path.substr(start, end-start));
+        start = end+1;
+        //TODO: handle start >string.length()
+        end = path.find("/",start);
+    }   
+
+    pathVec.push_back(path.substr(start));
+
+    return pathVec;
 }

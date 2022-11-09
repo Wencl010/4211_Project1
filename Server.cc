@@ -108,14 +108,12 @@ void subscribe(int socketFd, MsgPacket response){
     Topic* subTopic = topicMgr->getTopic(response.topic);
 
     if(subTopic == NULL){
-        sendError(socketFd, "Topic not found\n");
-        std::cout << socketFd <<": Sub Error - Topic Not Found\n";
+        //sendError(socketFd, "Topic not found\n");
+        //::cout << socketFd <<": Sub Error - Topic Not Found\n";
 
-        //TODO:create topics
-        // topicLock->lock();
-        // topicMgr->createTopic(socketFd, subTopic);
-        // topicLock->unlock();
-        return;
+        topicLock->lock();
+        subTopic = topicMgr->createTopic(response.topic);
+        topicLock->unlock();
     }
 
     subLock->lock();
@@ -136,13 +134,11 @@ void publish(int socketFd, MsgPacket response){
     Topic* subTopic = topicMgr->getTopic(response.topic);
 
     if(subTopic == NULL){
-        sendError(socketFd, "Topic not found\n");
-        std::cout << socketFd <<": Pub Error - Topic Not Found\n";
-         //TODO:create topics
-        // topicLock->lock();
-        // topicMgr->createTopic(socketFd, subTopic);
-        // topicLock->unlock();
-        return;
+        // sendError(socketFd, "Topic not found\n");
+        // std::cout << socketFd <<": Pub Error - Topic Not Found\n";
+        topicLock->lock();
+        subTopic = topicMgr->createTopic(response.topic);
+        topicLock->unlock();
     }
 
     subLock->lock();
