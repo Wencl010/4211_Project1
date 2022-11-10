@@ -62,9 +62,12 @@ void Topic::addSubTopic(Topic* topic){
  * @return A Topic* to the sub-topic with the given name
  */
 Topic* Topic::getSubTopic(std::string name){
+    std::cout<<"start\n";
     Topic* current = NULL;
-    for(int i = 0; i < subTopics.size(); i++){
-        current = subTopics.at(i);
+    for(int j = 0; j < subTopics.size(); j++){
+        std::cout<<"j: "<<j<<" topics: "<<subTopics.size()<<"\n";
+
+        current = subTopics.at(j);
         if(name.compare(current->getName()) == 0){
             return current;
         }
@@ -112,7 +115,8 @@ Topic* TopicManager::getTopic(std::string topicPath){
 
     //Looking through sublevels
     Topic* current = root;
-    for(int i = 1; 1 < topicNames.size(); i++){
+    for(int i = 1; i < topicNames.size(); i++){
+        std::cout<<"116\n";
         current = current->getSubTopic(topicNames.at(i));
         if(current == NULL){return NULL;}
     }
@@ -141,17 +145,16 @@ Topic* TopicManager::createTopic(std::string topicPath){
         return NULL;
     }
 
-    Topic* newTopic;
+    Topic* newTopic = NULL;
     //Get the root topic level
-    Topic* root = NULL;
     for(int i = 0; i < rootTopics.size(); i++){
-        root = rootTopics.at(i);
-        if((topicNames.at(0)).compare(root->getName()) == 0){
+        newTopic = rootTopics.at(i);
+        if((topicNames.at(0)).compare(newTopic->getName()) == 0){
             break;
         }
-        root = NULL;
+        newTopic = NULL;
     }
-    if(root == NULL){
+    if(newTopic == NULL){
         //create root topic level if it doesn't exist
         newTopic = new Topic(topicNames.at(0));
         rootTopics.push_back(newTopic);
@@ -161,16 +164,18 @@ Topic* TopicManager::createTopic(std::string topicPath){
     for(int i = 1; i < topicNames.size(); i++){
         Topic* checkTopic = NULL;
         checkTopic = newTopic->getSubTopic(topicNames.at(i));
+
         if(checkTopic == NULL){
             Topic* temp = new Topic(topicNames.at(i));
             newTopic->addSubTopic(temp);
             newTopic = temp;
+
         }
         else{
             newTopic = checkTopic;
         }
     }
-    
+
     return newTopic;
 }
 

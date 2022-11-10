@@ -263,7 +263,8 @@ int main(){
         std::cout << tempClientFd <<": Socket opened to "<<inet_ntoa(clientAddr.sin_addr)<<"\n";
         
         std::thread clientThread(handleClient, tempClientFd);
-        clientThread.detach(); //Todo: Figure out closing sockets when server closes. 
+        clientThread.detach(); //Todo: Figure out closing sockets when server closes.
+        //ToDo: handle broken pipe by client 
         //Maybe use select and create thread that handle each individual response?
     }
 
