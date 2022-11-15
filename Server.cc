@@ -108,12 +108,14 @@ void subscribe(int socketFd, MsgPacket response){
     Topic* subTopic = topicMgr->getTopic(response.topic);
 
     if(subTopic == NULL){
-        //sendError(socketFd, "Topic not found\n");
-        //::cout << socketFd <<": Sub Error - Topic Not Found\n";
-
         topicLock->lock();
         subTopic = topicMgr->createTopic(response.topic);
         topicLock->unlock();
+        if(subTopic == NULL){
+            sendError(socketFd, "Invalid Topic String\n");
+            std::cout << socketFd <<": Sub Error - Invalid Topic String\n";
+            return;
+        }
     }
 
     subLock->lock();
@@ -134,11 +136,14 @@ void publish(int socketFd, MsgPacket response){
     Topic* subTopic = topicMgr->getTopic(response.topic);
 
     if(subTopic == NULL){
-        // sendError(socketFd, "Topic not found\n");
-        // std::cout << socketFd <<": Pub Error - Topic Not Found\n";
         topicLock->lock();
         subTopic = topicMgr->createTopic(response.topic);
         topicLock->unlock();
+         if(subTopic == NULL){
+            sendError(socketFd, "Invalid Topic String\n");
+            std::cout << socketFd <<": Sub Error - Invalid Topic String\n";
+            return;
+        }
     }
 
     subLock->lock();

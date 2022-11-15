@@ -186,16 +186,40 @@ Topic* TopicManager::createTopic(std::string topicPath){
  * @return a vector of path names, with postion 0 being the outermost name. If invalid path NULL
  */
 std::vector<std::string> TopicManager::splitPath(std::string path){
-    //TODO: handle * and other name errors
     std::vector<std::string> pathVec;
+
+    //check for path errors
+    if(path.at(path.length()-1) == '/'){
+        return pathVec;
+    }
+    if(path.length() > 1){
+        int symbol = path.find("#");
+        if(symbol != -1){
+            if(symbol != (path.length()-1) || path.at(symbol-1) != '/'){
+                return pathVec;
+            }
+        }
+        symbol = path.find("+");
+        while(symbol != -1){
+            if(path.at(symbol-1) != '/'){
+                return pathVec;
+            }
+            symbol = path.find("+",symbol+1);
+        }
+    }
+    else if(path.length() == 0){
+        return pathVec;
+    }
+
+
+
     int start = 0;
     int end = path.find("/"); 
 
     while(end != -1){
         pathVec.push_back(path.substr(start, end-start));
         start = end+1;
-        //TODO: handle start >string.length()
-        end = path.find("/",start);
+        end = path.find('/',start);
     }   
 
     pathVec.push_back(path.substr(start));
