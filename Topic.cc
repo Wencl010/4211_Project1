@@ -75,6 +75,10 @@ Topic* Topic::getSubTopic(std::string name){
     return NULL;
 }
 
+std::vector<Topic*> Topic::getSubTopics(){
+    return subTopics;
+ }
+
 
 /*************************Topic Manager*************************/
 TopicManager::TopicManager(){}
@@ -177,6 +181,10 @@ Topic* TopicManager::createTopic(std::string topicPath){
     }
 
     return newTopic;
+}
+
+std::vector<Topic*> TopicManager::getRoots(){
+    return rootTopics;
 }
 
 /**

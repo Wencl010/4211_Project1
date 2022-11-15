@@ -105,27 +105,83 @@ void sendSuccess(int socketFd, std::string successMsg){
  * @param response the MsgPacket containing the topic
  */
 void subscribe(int socketFd, MsgPacket response){
-    Topic* subTopic = topicMgr->getTopic(response.topic);
+    std::string respTopic = response.topic;
+    std::vector<Topic*> topics;
 
-    if(subTopic == NULL){
-        topicLock->lock();
-        subTopic = topicMgr->createTopic(response.topic);
-        topicLock->unlock();
-        if(subTopic == NULL){
+    if(respTopic.find("+") != -1){
+        std::vector<std::string> path = topicMgr->splitPath(respTopic);
+        if(path.size() == 0){
             sendError(socketFd, "Invalid Topic String\n");
             std::cout << socketFd <<": Sub Error - Invalid Topic String\n";
             return;
         }
+        if(respTopic.length() == 1){
+            std::vector<Topic*> topics = topicMgr->getRoots();
+            for(int i=0; i<topics.size();i++){
+                subLock->lock();
+                subMgr->addSubscription(socketFd, topics.at(i));
+                subLock->unlock(); 
+                sendSuccess(socketFd, "Successfully subscribed\n");
+                std::cout << socketFd <<": Subscribed to "<< topics.at(i)->getName()<<"\n";
+            }
+        }
+
+       
+
+    }
+    else if(respTopic.length() == 1 && respTopic.at(0) == '#'){
+        std::vector<Topic*> topics = topicMgr->getRoots();
+        for(int i=0; i<topics.size();i++){
+            subscribeRecursive(socketFd, topics.at(i));
+        }
+    }
+    else{
+        bool all = false;
+        int symbol = respTopic.find("#");
+        if(symbol != -1){
+            if(symbol == (respTopic.length()-1) && respTopic.at(symbol-1) == '/'){
+                all = true;
+                respTopic = respTopic.substr(0, respTopic.length() - 1);
+            }
+            else{
+                sendError(socketFd, "Invalid Topic String\n");
+                std::cout << socketFd <<": Sub Error - Invalid Topic String\n";
+                return;
+            }
+        }
+    
+        Topic* subTopic = topicMgr->getTopic(respTopic);
+
+        if(subTopic == NULL){
+            topicLock->lock();
+            subTopic = topicMgr->createTopic(respTopic);
+            topicLock->unlock();
+            if(subTopic == NULL){
+                sendError(socketFd, "Invalid Topic String\n");
+                std::cout << socketFd <<": Sub Error - Invalid Topic String\n";
+                return;
+            }
+        }
+
+        if(all){
+            subscribeRecursive(socketFd, subTopic);
+            return;
+        }
+        else{
+            subLock->lock();
+            subMgr->addSubscription(socketFd, subTopic);
+            subLock->unlock();
+            sendSuccess(socketFd, "Successfully subscribed\n");
+            std::cout << socketFd <<": Subscribed to "<< subTopic->getName()<<"\n";
+        }
     }
 
-    subLock->lock();
-    subMgr->addSubscription(socketFd, subTopic);
-    subLock->unlock();
-
-    sendSuccess(socketFd, "Successfully subscribed\n");
-    std::cout << socketFd <<": Subscribed to "<< subTopic->getName()<<"\n";
+    return;
 }
 
+void subscribeRecursive(int socketFd, Topic* topic){
+    //TODO
+} 
 
 /**
   * Publishes a message out to all subscribers of the topic
@@ -133,15 +189,22 @@ void subscribe(int socketFd, MsgPacket response){
   * @param response the MsgPacket containing the topic
   */
 void publish(int socketFd, MsgPacket response){
-    Topic* subTopic = topicMgr->getTopic(response.topic);
+    std::string respTopic = response.topic;
+    if(respTopic.find('#') != -1 || respTopic.find('+') != -1){
+        sendError(socketFd, "Invalid Topic String\n");
+        std::cout << socketFd <<": Sub Error - Invalid Topic String\n";
+        return;
+    }
+
+    Topic* subTopic = topicMgr->getTopic(respTopic);
 
     if(subTopic == NULL){
         topicLock->lock();
-        subTopic = topicMgr->createTopic(response.topic);
+        subTopic = topicMgr->createTopic(respTopic);
         topicLock->unlock();
          if(subTopic == NULL){
-            sendError(socketFd, "Invalid Topic String\n");
-            std::cout << socketFd <<": Sub Error - Invalid Topic String\n";
+            sendError(socketFd, "Topic Creation Error\n");
+            std::cout << socketFd <<": Sub Error - Topic Creation Error\n";
             return;
         }
     }

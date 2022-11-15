@@ -26,6 +26,8 @@ class Topic{
 
         void addSubTopic(Topic* topic); //adds a topic to the subtopic vector
         Topic* getSubTopic(std::string name);
+        std::vector<Topic*> getSubTopics();
+
 };
 
 /**
@@ -36,13 +38,15 @@ class TopicManager{
     private:
         std::vector<Topic*> rootTopics;
 
-        std::vector<std::string> splitPath(std::string);
     
     public:
         TopicManager();
         ~TopicManager();
         Topic* getTopic(std::string topicPath);
         Topic* createTopic(std::string topicPath);
+        std::vector<std::string> splitPath(std::string);
+
+        std::vector<Topic*> getRoots();
 };
 
 
