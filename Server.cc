@@ -5,6 +5,8 @@
 #include <thread>
 #include <mutex>
 #include <signal.h>
+#include <string>
+
 
 
 //socket includes
@@ -14,7 +16,7 @@
 #include <arpa/inet.h>
 #include <sys/select.h>
 
-#include "Topic.h"
+#include "RetainMSG.h"
 #include "Subscription.h"
 #include "MsgProtocol.h"
 
@@ -22,7 +24,6 @@
 #define PORT 4211
 #define QUEUE_LEN 15
 
-TopicManager* topicMgr;    
 SubscriptionManager* subMgr;
 std::mutex* subLock;
 std::mutex* topicLock;
@@ -31,6 +32,53 @@ std::mutex* topicLock;
 int serverFd;
 
 
+/**
+ * Splits the provided path into it's individual path names and checks
+ * for path errors.
+ * 
+ * @return a vector of path names, with postion 0 being the outermost name. If invalid path NULL
+ */
+std::vector<std::string> splitPath(std::string path){
+    std::vector<std::string> pathVec;
+
+    //check for path errors
+    if(path.at(path.length()-1) == '/'){
+        return pathVec;
+    }
+    if(path.length() > 1){
+        int symbol = path.find("#");
+        if(symbol != -1){
+            if(symbol != (path.length()-1) || path.at(symbol-1) != '/'){
+                return pathVec;
+            }
+        }
+        symbol = path.find("+");
+        while(symbol != -1){
+            if(path.at(symbol-1) != '/'){
+                return pathVec;
+            }
+            symbol = path.find("+",symbol+1);
+        }
+    }
+    else if(path.length() == 0){
+        return pathVec;
+    }
+
+
+
+    int start = 0;
+    int end = path.find("/"); 
+
+    while(end != -1){
+        pathVec.push_back(path.substr(start, end-start));
+        start = end+1;
+        end = path.find('/',start);
+    }   
+
+    pathVec.push_back(path.substr(start));
+
+    return pathVec;
+}
 
 
 /**
@@ -106,82 +154,22 @@ void sendSuccess(int socketFd, std::string successMsg){
  */
 void subscribe(int socketFd, MsgPacket response){
     std::string respTopic = response.topic;
-    std::vector<Topic*> topics;
 
-    if(respTopic.find("+") != -1){
-        std::vector<std::string> path = topicMgr->splitPath(respTopic);
-        if(path.size() == 0){
-            sendError(socketFd, "Invalid Topic String\n");
-            std::cout << socketFd <<": Sub Error - Invalid Topic String\n";
-            return;
-        }
-        if(respTopic.length() == 1){
-            std::vector<Topic*> topics = topicMgr->getRoots();
-            for(int i=0; i<topics.size();i++){
-                subLock->lock();
-                subMgr->addSubscription(socketFd, topics.at(i));
-                subLock->unlock(); 
-                sendSuccess(socketFd, "Successfully subscribed\n");
-                std::cout << socketFd <<": Subscribed to "<< topics.at(i)->getName()<<"\n";
-            }
-        }
-
-       
-
+    std::vector<std::string> topicPath = splitPath(respTopic);
+    if(topicPath.size() == 0){
+        sendError(socketFd, "Invalid Topic String\n");
+        std::cout << socketFd <<": Sub Error - Invalid Topic String\n";
+        return;
     }
-    else if(respTopic.length() == 1 && respTopic.at(0) == '#'){
-        std::vector<Topic*> topics = topicMgr->getRoots();
-        for(int i=0; i<topics.size();i++){
-            subscribeRecursive(socketFd, topics.at(i));
-        }
-    }
-    else{
-        bool all = false;
-        int symbol = respTopic.find("#");
-        if(symbol != -1){
-            if(symbol == (respTopic.length()-1) && respTopic.at(symbol-1) == '/'){
-                all = true;
-                respTopic = respTopic.substr(0, respTopic.length() - 1);
-            }
-            else{
-                sendError(socketFd, "Invalid Topic String\n");
-                std::cout << socketFd <<": Sub Error - Invalid Topic String\n";
-                return;
-            }
-        }
     
-        Topic* subTopic = topicMgr->getTopic(respTopic);
-
-        if(subTopic == NULL){
-            topicLock->lock();
-            subTopic = topicMgr->createTopic(respTopic);
-            topicLock->unlock();
-            if(subTopic == NULL){
-                sendError(socketFd, "Invalid Topic String\n");
-                std::cout << socketFd <<": Sub Error - Invalid Topic String\n";
-                return;
-            }
-        }
-
-        if(all){
-            subscribeRecursive(socketFd, subTopic);
-            return;
-        }
-        else{
-            subLock->lock();
-            subMgr->addSubscription(socketFd, subTopic);
-            subLock->unlock();
-            sendSuccess(socketFd, "Successfully subscribed\n");
-            std::cout << socketFd <<": Subscribed to "<< subTopic->getName()<<"\n";
-        }
-    }
-
+    subLock->lock();
+    subMgr->addSubscription(socketFd, topicPath);
+    subLock->unlock();
+    sendSuccess(socketFd, "Successfully subscribed\n");
+    std::cout << socketFd <<": Subscribed to "<< respTopic <<"\n";
     return;
 }
 
-void subscribeRecursive(int socketFd, Topic* topic){
-    //TODO
-} 
 
 /**
   * Publishes a message out to all subscribers of the topic
@@ -196,22 +184,14 @@ void publish(int socketFd, MsgPacket response){
         return;
     }
 
-    Topic* subTopic = topicMgr->getTopic(respTopic);
+    std::vector<std::string> topicPath = splitPath(respTopic);
 
-    if(subTopic == NULL){
-        topicLock->lock();
-        subTopic = topicMgr->createTopic(respTopic);
-        topicLock->unlock();
-         if(subTopic == NULL){
-            sendError(socketFd, "Topic Creation Error\n");
-            std::cout << socketFd <<": Sub Error - Topic Creation Error\n";
-            return;
-        }
-    }
+    if(response.retain){
+        //TODO: create retain topics
+    };
 
-    subLock->lock();
-    std::vector<Subscription*> topicSubs = subMgr->getSubByTopic(subTopic);
-    subLock->unlock();
+    //read only, doesn't need a lock to access subscriptionManager. A client subscribe at the exact time the message is sent can be safely ignored as a minor inconvenience
+    std::vector<Subscription*> topicSubs = subMgr->getSubByTopic(topicPath);
 
     Subscription* current = NULL;
     for(int i = 0; i < topicSubs.size(); i++){
@@ -220,7 +200,7 @@ void publish(int socketFd, MsgPacket response){
     }
 
     sendSuccess(socketFd, "Successfully Published\n");
-    std::cout << socketFd <<": Published to "<< subTopic->getName()<<"\n";
+    std::cout << socketFd <<": Published to "<< respTopic <<"\n";
 }
 
 
@@ -291,7 +271,6 @@ void shutDownServer(int sig){
     std::cout << "Shutting Down.\n";
 
     close(serverFd);
-    delete topicMgr;
     delete subMgr;
     delete subLock;
     delete topicLock;
@@ -309,7 +288,6 @@ int main(){
     sigaction(SIGINT, &action, NULL);
 
 
-    topicMgr = new TopicManager;    
     subMgr = new SubscriptionManager;
     topicLock = new std::mutex;
     subLock = new std::mutex;

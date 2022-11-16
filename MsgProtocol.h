@@ -53,7 +53,7 @@ MsgPacket initMsgPacket(){
     newPck.type = MT_NULL;
     strcpy(newPck.topic, "");
     strcpy(newPck.msg, "");
-    newPck. retain = false;
+    newPck.retain = false;
     return newPck;
 }
 
