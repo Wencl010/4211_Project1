@@ -133,8 +133,7 @@ void SubscriptionManager::removeSubscription(int clientConFd, std::vector<std::s
 //     std::string print = "";
 //     Subscription* current = NULL;
 //     for(int i = 0; i < subscriptions.size(); i++){
-//         current = subscriptions.at(i);
-        
+//         current = subscriptions.at(i);      
 //         print += std::to_string(current->getClient()) + ": " + current->getTopic()->getName() + "\n";
 //     }
 //     return print;

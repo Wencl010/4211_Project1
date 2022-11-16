@@ -24,6 +24,7 @@
 #define PORT 4211
 #define QUEUE_LEN 15
 
+RetainManager* retainMgr; 
 SubscriptionManager* subMgr;
 std::mutex* subLock;
 std::mutex* topicLock;
@@ -165,7 +166,15 @@ void subscribe(int socketFd, MsgPacket response){
     subLock->lock();
     subMgr->addSubscription(socketFd, topicPath);
     subLock->unlock();
-    sendSuccess(socketFd, "Successfully subscribed\n");
+
+    std::string topicMsg =  retainMgr->getRetainMsg(topicPath);
+
+    if(topicMsg != ""){
+        sendSuccess(socketFd, "Successfully subscribed. Topic has the following message waiting:\n" + topicMsg + "\n");
+    }
+    else{
+        sendSuccess(socketFd, "Successfully subscribed\n");
+    }
     std::cout << socketFd <<": Subscribed to "<< respTopic <<"\n";
     return;
 }
@@ -178,6 +187,7 @@ void subscribe(int socketFd, MsgPacket response){
   */
 void publish(int socketFd, MsgPacket response){
     std::string respTopic = response.topic;
+
     if(respTopic.find('#') != -1 || respTopic.find('+') != -1){
         sendError(socketFd, "Invalid Topic String\n");
         std::cout << socketFd <<": Sub Error - Invalid Topic String\n";
@@ -187,8 +197,11 @@ void publish(int socketFd, MsgPacket response){
     std::vector<std::string> topicPath = splitPath(respTopic);
 
     if(response.retain){
-        //TODO: create retain topics
-    };
+        std::string respMsg = response.msg;
+        topicLock->lock();
+        retainMgr->setRetainMsg(respMsg, topicPath);
+        topicLock->unlock();
+    }
 
     //read only, doesn't need a lock to access subscriptionManager. A client subscribe at the exact time the message is sent can be safely ignored as a minor inconvenience
     std::vector<Subscription*> topicSubs = subMgr->getSubByTopic(topicPath);
@@ -272,6 +285,7 @@ void shutDownServer(int sig){
 
     close(serverFd);
     delete subMgr;
+    delete retainMgr;
     delete subLock;
     delete topicLock;
 
@@ -289,6 +303,7 @@ int main(){
 
 
     subMgr = new SubscriptionManager;
+    retainMgr = new RetainManager;
     topicLock = new std::mutex;
     subLock = new std::mutex;
 
