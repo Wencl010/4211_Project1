@@ -170,7 +170,7 @@ void subscribe(int socketFd, MsgPacket response){
     std::string topicMsg =  retainMgr->getRetainMsg(topicPath);
 
     if(topicMsg != ""){
-        sendSuccess(socketFd, "Successfully subscribed. Topic has the following message waiting:\n" + topicMsg + "\n");
+        sendSuccess(socketFd, "Successfully subscribed. " + respTopic + " has the following message waiting:\n" + topicMsg + "\n");
     }
     else{
         sendSuccess(socketFd, "Successfully subscribed\n");

@@ -261,6 +261,23 @@ void publishMessage(int serverFd){
     } while(!inputIsCorrect);
 
     //TODO: Implement Retain
+    inputIsCorrect = false;
+    do {
+        std::cout << "Should this be set as the retained(Y or N): ";
+        getline(std::cin, userInput);
+
+        if(userInput == "Y"){
+            inputIsCorrect = true;
+            pub.retain = true;
+        }
+        else if(userInput == "N"){
+            inputIsCorrect = true;
+            pub.retain = false;
+        }
+        else{
+            std::cout << "\nPlease Enter Y or N.\n";
+        }
+    } while(!inputIsCorrect);
 
 
     if(write(serverFd, &pub, sizeof(MsgPacket))==-1){perror("Write Failed");}
