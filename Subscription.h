@@ -16,6 +16,7 @@ class Subscription{
         Subscription(int clientConFd, std::vector<std::string> topic);
         int getClient();
         std::vector<std::string> getTopic();
+        std::string getTopicString();
         bool matchesTopic(std::vector<std::string> checkTopic);
 };
 
@@ -34,9 +35,8 @@ class SubscriptionManager{
         std::vector<Subscription*> getSubByTopic(std::vector<std::string>  topic);
 
         void addSubscription(int clientConFd, std::vector<std::string> topic);
-        void removeSubscription(int clientConFd, std::vector<std::string> topic);
+        int removeSubscription(int clientConFd, std::vector<std::string> topic);
 
-        //std::string printSubs(); //TODO: delete
 };
 
 

@@ -167,18 +167,85 @@ void subscribe(int socketFd, MsgPacket response){
     subMgr->addSubscription(socketFd, topicPath);
     subLock->unlock();
 
-    std::string topicMsg =  retainMgr->getRetainMsg(topicPath);
+    std::vector<std::string> topicMsgs =  retainMgr->getRetainMsg(topicPath); 
 
-    if(topicMsg != ""){
-        sendSuccess(socketFd, "Successfully subscribed. " + respTopic + " has the following message waiting:\n" + topicMsg + "\n");
+    if(topicMsgs.size() == 0){
+        sendSuccess(socketFd, "Successfully subscribed\n");
+    }
+    else if(topicMsgs.size() == 1){
+        sendSuccess(socketFd, "Successfully subscribed. " + respTopic + " has the following message waiting:\n" + topicMsgs.back() + "\n");
     }
     else{
-        sendSuccess(socketFd, "Successfully subscribed\n");
+        MsgPacket respond = initMsgPacket(); 
+        respond.type = MT_Success;
+        std::string size = std::to_string(topicMsgs.size());
+        strcpy(respond.topic, "Successfully subscribed. There are the following messages waiting:\n");
+        strcpy(respond.msg, size.c_str());
+        if(write(socketFd, &respond, sizeof(MsgPacket))==-1){perror("Message Transmit Failed"); return;}
+
+        for(int i = 0; i < topicMsgs.size(); i++){
+            respond.type = MT_List_Item;
+            strcpy(respond.topic, topicMsgs.at(i).c_str());
+            if(write(socketFd, &respond, sizeof(MsgPacket))==-1){perror("Message Transmit Failed"); return;}
+        }
     }
     std::cout << socketFd <<": Subscribed to "<< respTopic <<"\n";
     return;
 }
 
+/**
+ * Unsubscribe client from topic
+ * @param socketFd the client's socket
+ * @param response the MsgPacket containing the topic
+ */
+void unsubscribe(int socketFd, MsgPacket response){
+    std::string respTopic = response.topic;
+
+    std::vector<std::string> topicPath = splitPath(respTopic);
+    if(topicPath.size() == 0 || respTopic.find('#') != -1 || respTopic.find('+') != -1){
+        sendError(socketFd, "Invalid Topic String\n");
+        std::cout << socketFd <<": Sub Error - Invalid Topic String\n";
+        return;
+    }
+    
+    subLock->lock();
+    int success = subMgr->removeSubscription(socketFd, topicPath);
+    subLock->unlock();
+
+    if(success == 1){
+        sendSuccess(socketFd, "Successfully unsubscribed from " + respTopic + ".\n");
+        std::cout << socketFd <<": unsubscribed from "<< respTopic <<"\n";
+
+    }
+    else{
+        sendError(socketFd, "Subscription not found for " + respTopic + ".\n");
+        std::cout << socketFd <<": subscription not found for "<< respTopic <<"\n";
+
+
+    }
+    return;
+}
+
+/**
+ * Send the client a list of their current subscriptions
+ * @param socketFd the client's socket
+ * @param response the MsgPacket containing the topic
+ */
+void listSubs(int socketFd, MsgPacket response){
+    std::vector<Subscription*> subs = subMgr->getSubByClient(socketFd);
+
+    MsgPacket respond = initMsgPacket(); 
+    respond.type = MT_Success;
+    std::string size = std::to_string(subs.size());
+    strcpy(respond.topic, size.c_str());
+    if(write(socketFd, &respond, sizeof(MsgPacket))==-1){perror("Message Transmit Failed"); return;}
+
+    for(int i = 0; i < subs.size(); i++){
+        respond.type = MT_List_Item;
+        strcpy(respond.topic, subs.at(i)->getTopicString().c_str());
+        if(write(socketFd, &respond, sizeof(MsgPacket))==-1){perror("Message Transmit Failed"); return;}
+    }
+}
 
 /**
   * Publishes a message out to all subscribers of the topic
@@ -216,6 +283,18 @@ void publish(int socketFd, MsgPacket response){
     std::cout << socketFd <<": Published to "<< respTopic <<"\n";
 }
 
+/**
+ * Removes all subscriptions for a given client
+ * @param socketFd the client's socket
+ */
+void deleteSubscriptions(int socketFd){
+    subLock->lock();
+    std::vector<Subscription*> subs = subMgr->getSubByClient(socketFd);
+    for(int i = 0; i < subs.size(); i++){
+        subMgr->removeSubscription(socketFd, subs.at(i)->getTopic());
+    }
+    subLock->unlock();
+}
 
 /**
  * Process a response and take the appropriate action such as add the client as 
@@ -238,7 +317,7 @@ int handleResponse(int socketFd, MsgPacket response){
         msgPck.type = MT_Disc_ACK;
         if(write(socketFd, &msgPck, sizeof(MsgPacket))==-1){perror("Write Failed"); return -1;}
 
-        //TODO: Delete all subscriptions
+        deleteSubscriptions(socketFd);
 
         close(socketFd);
         std::cout << socketFd <<": Disconnected\n";
@@ -251,6 +330,14 @@ int handleResponse(int socketFd, MsgPacket response){
     }
     else if(response.type == MT_Subscribe){
         subscribe(socketFd, response);
+        return 0;
+    }
+    else if(response.type == MT_Unsubscribe){
+        unsubscribe(socketFd, response);
+        return 0;
+    }
+    else if(response.type == MT_List){
+        listSubs(socketFd, response);
         return 0;
     }
     else{
@@ -267,11 +354,21 @@ int handleResponse(int socketFd, MsgPacket response){
  * @param clientFd the file descriptor of the socket to handle
  */
 void handleClient(int clientFd){
+    struct sigaction pipeAction;
+    pipeAction.sa_handler = SIG_IGN;
+    sigemptyset(&pipeAction.sa_mask);
+    sigaddset(&pipeAction.sa_mask, SIGPIPE);
+    pipeAction.sa_flags = 0;
+    sigaction(SIGPIPE, &pipeAction, NULL);
+
     MsgPacket response = initMsgPacket();
     int open = 0;
     while(open == 0){
         int readSize = read(clientFd, &response, sizeof(MsgPacket));
-        if(readSize == -1){perror("Write Failed");}
+        if(readSize == -1){
+            std::cout << clientFd << ": Broken Pipe. Exiting Thread\n";
+            return;
+        }
 
         open = handleResponse(clientFd, response);
     }
@@ -324,9 +421,9 @@ int main(){
         std::cout << tempClientFd <<": Socket opened to "<<inet_ntoa(clientAddr.sin_addr)<<"\n";
         
         std::thread clientThread(handleClient, tempClientFd);
-        clientThread.detach(); //Todo: Figure out closing sockets when server closes.
+        clientThread.detach(); 
+        //Todo: Figure out closing sockets when server closes.
         //ToDo: handle broken pipe by client 
-        //Maybe use select and create thread that handle each individual response?
     }
 
     shutDownServer(0);

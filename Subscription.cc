@@ -6,14 +6,31 @@ Subscription::Subscription(int clientConFd, std::vector<std::string> topic){
     this->topic = topic;
 }
 
+/**
+ * Client accessor method
+ * 
+ * @return socket descriptor of client
+ */
 int Subscription::getClient(){
     return clientSocketFd;
 }
 
+/**
+ * Topic accessor method
+ * 
+ * @return a vector conatining the topic path of the subscription
+ */
 std::vector<std::string> Subscription::getTopic(){
     return topic;
 }
 
+
+/**
+ * Checks if the argument topic name matches the internal topic name
+ * 
+ * @param checkTopic the topic path that is being compared
+ * @return true/false depending on if its a math or not
+ */
 bool Subscription::matchesTopic(std::vector<std::string> checkTopic){
     //if the topic provided is shorter than the subscription topic
     //it is automaticaly false as only the subscription topic can have 
@@ -39,6 +56,20 @@ bool Subscription::matchesTopic(std::vector<std::string> checkTopic){
     //level in checkTopic and there is no # wildcard so it's only a true 
     //match if the number of levels matches between topic and checkTopic
     return (checkTopic.size() == topic.size());
+}
+
+
+/**
+ * Converts the topic path back to a normal string
+ * 
+ * @return std::string the topic path as a string
+ */
+std::string Subscription::getTopicString(){
+    std::string build = topic.at(0);
+    for(int i = 1; i < topic.size(); i++){
+        build += "/" + topic.at(i);
+    }
+    return build;
 }
 
 /*************************Subscription Manager*************************/
@@ -115,8 +146,8 @@ void SubscriptionManager::addSubscription(int clientConFd, std::vector<std::stri
  * @param clientConFd the client of the subscription to be deleted
  * @param topic the topic of the subscription to be deleted
  */
-void SubscriptionManager::removeSubscription(int clientConFd, std::vector<std::string> topic){
-
+int SubscriptionManager::removeSubscription(int clientConFd, std::vector<std::string> topic){
+    int success = -1;
     //loop through all subscriptions, if a subscription to the client and topic is found delete it
     Subscription* current = NULL;
     for(int i = 0; i < subscriptions.size(); i++){
@@ -125,16 +156,9 @@ void SubscriptionManager::removeSubscription(int clientConFd, std::vector<std::s
             delete current;
             subscriptions.erase(subscriptions.begin() + i);
             i--;
+            success = 1;
         }
     }
+    return success;
 }
 
-// std::string SubscriptionManager::printSubs(){
-//     std::string print = "";
-//     Subscription* current = NULL;
-//     for(int i = 0; i < subscriptions.size(); i++){
-//         current = subscriptions.at(i);      
-//         print += std::to_string(current->getClient()) + ": " + current->getTopic()->getName() + "\n";
-//     }
-//     return print;
-// }

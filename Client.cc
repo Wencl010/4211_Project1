@@ -14,9 +14,11 @@
 int connectToServer();
 int disconnectFromServer(int serverFd);
 void listenOnServer(int serverFd);
+void listSubscriptions(int serverFD);
 void endListen(int sig);
 void subscribeToTopic(int serverFd);
 void publishMessage(int serverFd);
+void unsubscribeFromTopic(int serverFd);
 
 #define PORT 4211
  
@@ -32,18 +34,24 @@ int main(){
     bool run = true;
     while(run){
         std::cout << "\n------------------------------------------------\n";
-        std::cout << "Options: \nL - listen for messages in subscriptions\nS - subscribe to messages\nP - publish a message\nQ - quit\n";
+        std::cout << "Options: \nW - Wait for messages from subscriptions\nS - subscribe to messages\nU - Unsubscribe from messages\nL - List subscriptions\nP - publish a message\nQ - quit\n";
         std::cout << "------------------------------------------------\n";
         std::cout << "Enter choice: ";
 
         getline(std::cin, userInput);
         std::cout << "\n\n\n\n\n\n";
         
-        if(userInput == "L"){
+        if(userInput == "W"){
             listenOnServer(serverFd);
         }
         else if(userInput == "S"){
             subscribeToTopic(serverFd);
+        }
+        else if(userInput == "U"){
+            unsubscribeFromTopic(serverFd);
+        }
+        else if(userInput == "L"){
+            listSubscriptions(serverFd);
         }
         else if(userInput == "P"){
             publishMessage(serverFd);
@@ -187,6 +195,12 @@ void endListen(int sig){
     listening = false;
 }
 
+/**
+ * Handles the I/O and server communication necessary to subscribe
+ * to a new topic
+ *  
+ * @param serverFd the socket descriptor of the server
+ */
 void subscribeToTopic(int serverFd){
     std::string userInput;
     MsgPacket sub = initMsgPacket();
@@ -217,14 +231,33 @@ void subscribeToTopic(int serverFd){
 
     if(response.type == MT_Success){
         std::cout << response.topic << "\n";
-        
-        //TODO: Implement Retain
+
+        if(response.msg != ""){
+            int numSubs = atoi(response.msg);
+
+            for(int i = 0; i < numSubs; i++){
+                if(read(serverFd, &response, sizeof(MsgPacket))==-1){perror("Read Failed");}
+
+                if(response.type != MT_List_Item){
+                    std::cout << "Error: Not enough subscriptions sent.\n";
+                    return;
+                }
+
+                std::cout <<"    "<<response.topic<<"\n";
+            }
+        }
     }
     else{
         std::cout << "Error: " << response.topic << "\n";
     }
 }
 
+/**
+ * Handles the I/O and server communication necessary to publish a
+ * message to a  topic
+ *  
+ * @param serverFd the socket descriptor of the server
+ */
 void publishMessage(int serverFd){
     std::string userInput;
     MsgPacket pub = initMsgPacket();
@@ -260,7 +293,6 @@ void publishMessage(int serverFd){
         }
     } while(!inputIsCorrect);
 
-    //TODO: Implement Retain
     inputIsCorrect = false;
     do {
         std::cout << "Should this be set as the retained(Y or N): ";
@@ -289,8 +321,86 @@ void publishMessage(int serverFd){
 
     if(response.type == MT_Success){
         std::cout << response.topic << "\n";
-        
-        //TODO: Implement Retain
+    }
+    else{
+        std::cout << "Error: " << response.topic << "\n";
+    }
+
+}
+
+/**
+ * Handles the I/O and server communication necessary to unsubscribe
+ * from a new topic
+ *  
+ * @param serverFd the socket descriptor of the server
+ */
+void unsubscribeFromTopic(int serverFd){
+    std::string userInput;
+    MsgPacket sub = initMsgPacket();
+
+    sub.type = MT_Unsubscribe;
+    
+
+    bool inputIsCorrect = false;
+    do {
+        std::cout << "Enter Topic: ";
+        getline(std::cin, userInput);
+
+        if(userInput.length() < 70){
+            inputIsCorrect = true;
+            strcpy(sub.topic, userInput.c_str());
+        }
+        else{
+            std::cout << "\nTopic must be less than 70 characters.\n";
+        }
+    } while(!inputIsCorrect);
+
+    if(write(serverFd, &sub, sizeof(MsgPacket))==-1){perror("Write Failed");}
+
+    std::cout << "\nRequest sent to server.\n";
+
+    MsgPacket response = initMsgPacket();
+    if(read(serverFd, &response, sizeof(MsgPacket)) == -1){perror("Read Failed");}
+
+    if(response.type == MT_Success){
+        std::cout << response.topic << "\n";
+    }
+    else{
+        std::cout << "Error: " << response.topic << "\n";
+    }
+}
+
+/**
+ * Handles the I/O and server communication necessary to display a list of a 
+ * user's subscriptions to a topic
+ *  
+ * @param serverFd the socket descriptor of the server
+ */
+void listSubscriptions(int serverFd){
+    MsgPacket request = initMsgPacket(); 
+    request.type = MT_List;
+    if(write(serverFd, &request, sizeof(MsgPacket))==-1){perror("Server Connection Failed"); exit(-1);}
+    std::cout << "List request sent\n";
+
+    //wait for response form server
+    MsgPacket response = initMsgPacket(); 
+    if(read(serverFd, &response, sizeof(MsgPacket))==-1){perror("Read Failed");}
+    //process response from server
+    if(response.type == MT_Success){
+        std::cout << response.topic<< " subscriptions found:\n";
+        int numSubs = atoi(response.topic);
+
+        for(int i = 0; i < numSubs; i++){
+            if(read(serverFd, &response, sizeof(MsgPacket))==-1){perror("Read Failed");}
+
+            if(response.type != MT_List_Item){
+                std::cout << "Error: Not enough subscriptions sent.\n";
+                return;
+            }
+
+            std::cout <<"    "<<response.topic<<"\n";
+        }
+
     }
     else{
         std::cout << "Error: " << response.topic << "\n";

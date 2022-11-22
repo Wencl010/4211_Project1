@@ -6,8 +6,7 @@
 
 
 /**
- * Class to represent an individual topic and keep track 
- * of the sub topics one level below it
+ * Class to represent a topic that has a retained messages
  */
 class RetainMSG{
     private:
@@ -25,6 +24,9 @@ class RetainMSG{
 
 };
 
+/**
+ * A manager class to handle all the subclass retain msgs
+ */
 class RetainManager{
     private:
         std::vector<RetainMSG*> messages;
@@ -32,7 +34,7 @@ class RetainManager{
     public:
         ~RetainManager();
         void setRetainMsg(std::string message, std::vector<std::string> topic);
-        std::string getRetainMsg(std::vector<std::string> topic);
+        std::vector<std::string> getRetainMsg(std::vector<std::string> topic);
 };
 
 #endif

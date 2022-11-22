@@ -59,8 +59,10 @@ This struct is the sole data format passed between client and server. The MsgTyp
 ```
 ------------------------------------------------
 Options: 
-L - listen for messages in subscriptions
+W - Wait for messages from subscriptions
 S - subscribe to messages
+U - Unsubscribe from messages
+L - List subscriptions
 P - publish a message
 Q - quit
 ------------------------------------------------
@@ -73,8 +75,8 @@ Waiting for messages... Use ^C to return to menu
 When in listening mode Ctrl + C will take users back to the options menu.
 #### Server:
 Once the server starts the main thread waits for new connections. For each connection it spawns a worker thread. The worker threads wait until they receive a message from a client then handle the message (create a subscription or publish a message) and reply before returning to listen mode. The workers all share one TopicManager instance and one SubscriptionManager instance to handle subscriptions. The access to these instances is controlled with two mutex locks, one for topics and one for subscriptions. 
-##### Topics:
-The topics.h file contains both the Topic and TopicManager classes. The Topic class holds the name and retainMsg of a topic, as well as any child topics that are under it. The TopicManager handles the highest level topics and gives an interface to add and create topics deep in the tree.
+##### Retain Messages:
+The RetainMSG.h file contains both the RetainMSG and RetainManager classes. The RetainMSG class holds the name and retainMsg of a topic. The RetainManager handles the vector of retainMSGs and provides an interface to simplify with working with them.
 ##### Subscriptions:
 The subscription.h file both the Subscription and SubscriptionManager classes. Much like the Topic class, the Subscription class holds the information of a single subscription, namely the client's socket file descriptor and a pointer to the topic. SubscriptionManager keeps track of all the subscription and provides methods for accessing all of them.
 

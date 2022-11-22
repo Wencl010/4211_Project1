@@ -15,6 +15,9 @@ enum MsgType {
     MT_Disc_ACK,
     MT_Publish,
     MT_Subscribe,
+    MT_Unsubscribe,
+    MT_List,
+    MT_List_Item,
     MT_Success,
     MT_Error
 };
@@ -29,25 +32,30 @@ struct MsgPacket {
     bool retain;
 };
 
-//Helper functions for debugging transmission errors
-std::string typeToString(MsgType x){
-    switch(x){
-        case MT_Connect: return "Connect";
-        case MT_Conn_ACK: return "Acknowledge Connect";
-        case MT_Disconnect: return "Disconnect";
-        case MT_Disc_ACK: return "Acknowledge Disconnect";
-        case MT_Publish: return "Publish";
-        case MT_Subscribe: return "Subscribe";
-        default: return "not found";
-    }
-}
-void printMsg(MsgPacket msg){
-    std::cout << "\nType: " << typeToString(msg.type) <<"\n";
-    std::cout << "Retain: " << msg.retain<<"\n";
-    std::cout << "Topic: " << msg.topic<<"\n";
-    std::cout << "Msg: " << msg.msg<<"\n";
-}
+// //Helper functions for debugging transmission errors
+// std::string typeToString(MsgType x){
+//     switch(x){
+//         case MT_Connect: return "Connect";
+//         case MT_Conn_ACK: return "Acknowledge Connect";
+//         case MT_Disconnect: return "Disconnect";
+//         case MT_Disc_ACK: return "Acknowledge Disconnect";
+//         case MT_Publish: return "Publish";
+//         case MT_Subscribe: return "Subscribe";
+//         default: return "not found";
+//     }
+// }
+// void printMsg(MsgPacket msg){
+//     std::cout << "\nType: " << typeToString(msg.type) <<"\n";
+//     std::cout << "Retain: " << msg.retain<<"\n";
+//     std::cout << "Topic: " << msg.topic<<"\n";
+//     std::cout << "Msg: " << msg.msg<<"\n";
+// }
 
+/**
+ * A brief function to create and initialize the values of a MsgPacket struct
+ * 
+ * @return MsgPacket a new initalized MsgPacket
+ */
 MsgPacket initMsgPacket(){
     MsgPacket newPck;
     newPck.type = MT_NULL;
